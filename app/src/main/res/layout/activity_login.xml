@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:id="@+id/login_layout"
+    tools:context=".LoginActivity">
+
+    <include
+        android:id="@+id/login_bar"
+        layout="@layout/bar_layout" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="25dp"
+        android:layout_gravity="center"
+        android:gravity="center">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/login_email"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/email"
+            app:errorEnabled="true"
+            app:hintEnabled="true"
+            style="@style/textInput"
+            app:hintTextColor="?android:attr/textColorPrimary">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textEmailAddress"
+                android:drawableEnd="@drawable/ic_mail_outline"
+                style="@style/editTextInput"
+                android:focusable="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/login_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/password"
+            app:errorEnabled="true"
+            app:hintEnabled="true"
+            app:passwordToggleEnabled="true"
+            app:passwordToggleTint="?android:attr/textColorPrimary"
+            style="@style/textInput"
+            app:hintTextColor="?android:attr/textColorPrimary">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                style="@style/editTextInput"
+                android:focusable="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp">
+
+            <Button
+                android:id="@+id/forgot_pass"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="@string/forgot_password"
+                android:textSize="16sp"
+                android:textAllCaps="false"
+                android:textAlignment="textStart"
+                android:textColor="?android:attr/textColorPrimary"
+                android:layout_gravity="center|start"
+                style="@style/Widget.MaterialComponents.Button.TextButton"/>
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btn_login"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/colorPrimaryDark"
+                android:src="@drawable/ic_check_white"
+                app:tint="@color/white"
+                app:borderWidth="0dp"
+                android:layout_gravity="end|center"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/go_to_reg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/don_t_have_an_account"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="18sp"
+            android:layout_margin="12dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>

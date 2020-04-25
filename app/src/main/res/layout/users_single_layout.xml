@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/onClickSingleLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:padding="7dp"
+        android:gravity="center">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/users_single_image"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/avatar" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:paddingRight="10dp"
+                android:id="@+id/single_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="User Name"
+                style="@android:style/TextAppearance.Large"
+                android:textStyle="bold"/>
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/online"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_gravity="center"
+                android:src="@drawable/online" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/single_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="5dp"
+            android:singleLine="true"
+            style="@android:style/TextAppearance.Small"
+            android:text="user status"/>
+
+        <View
+            android:id="@+id/view"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginStart="12dp"
+            android:background="?android:attr/dividerVertical" />
+
+    </LinearLayout>
+
+</LinearLayout>

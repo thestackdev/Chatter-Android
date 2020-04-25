@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SearchFragment"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <LinearLayout
+        android:padding="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/et_search"
+            android:background="@drawable/search_background"
+            android:padding="10dp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Search Your Friends"
+            android:drawableEnd="@drawable/search"/>
+
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:padding="10dp"
+        android:id="@+id/search_recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

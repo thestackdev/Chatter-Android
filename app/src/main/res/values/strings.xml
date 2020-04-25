@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Chatter</string>
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!-- Login Strings -->
+    <string name="login">Login</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="don_t_have_an_account">Don\'t have an Account ?</string>
+
+    <!-- Register Strings -->
+    <string name="display_name">Display Name</string>
+    <string name="re_enter_your_password">Re-Enter Your Password</string>
+    <string name="register">Register</string>
+    <string name="already_have_an_account">Already have an Account ?</string>
+
+    <!-- MainActivity Strings -->
+    <string name="chats">Chats</string>
+    <string name="search">Search</string>
+    <string name="friends">Friends</string>
+    <string name="requests">Requests</string>
+    <string name="settings">Settings</string>
+    <string name="enter_your_new_email_address">Enter your new Email Address</string>
+
+</resources>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menu_chats"
+        android:icon="@drawable/chats"
+        android:title="@string/chats"/>
+
+    <item
+        android:id="@+id/menu_search"
+        android:icon="@drawable/search"
+        android:title="@string/search"/>
+
+    <item
+        android:id="@+id/menu_friends"
+        android:icon="@drawable/friends"
+        android:title="@string/friends"/>
+
+    <item
+        android:id="@+id/menu_friendRequests"
+        android:icon="@drawable/requests"
+        android:title="@string/requests"/>
+
+    <item
+        android:id="@+id/menu_settings"
+        android:icon="@drawable/ic_settings_black_24dp"
+        android:title="@string/settings"/>
+
+</menu>

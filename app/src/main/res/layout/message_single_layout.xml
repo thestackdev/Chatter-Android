@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/message_single_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="5dp">
+
+    <LinearLayout
+        android:id="@+id/layout_bg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/background_left"
+        android:padding="3dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:maxWidth="250dp"
+            android:id="@+id/user_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:textColor="@color/white"
+            style="@android:style/TextAppearance.Medium"
+            android:text="TEST MESSAGE"/>
+
+        <TextView
+            android:id="@+id/message_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Time"
+            android:padding="4dp"
+            style="@android:style/TextAppearance.Small"
+            android:textColor="@color/white"
+            android:layout_marginStart="6dp"
+            android:gravity="bottom"
+            android:layout_gravity="bottom"/>
+
+        <ImageView
+            android:id="@+id/stamp"
+            android:layout_marginStart="10dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:gravity="bottom"
+            android:layout_gravity="bottom"
+            android:layout_marginEnd="4dp"
+            android:layout_marginBottom="4dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>

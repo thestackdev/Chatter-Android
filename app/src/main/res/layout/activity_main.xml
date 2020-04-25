@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    tools:context=".MainActivity"
+    android:background="@color/colorPrimary">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/appBarLayout"
+        android:animateLayoutChanges="true"
+        android:stateListAnimator="@null"
+        android:background="@color/colorPrimary">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/toolbarMainActivity"
+            app:titleTextColor="@color/white"
+            app:popupTheme="@style/Theme.MaterialComponents.DayNight">
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="?actionBarSize">
+
+                <TextView
+                    android:id="@+id/toolbar_title_main"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:textColor="@color/black"
+                    android:textStyle="bold"
+                    android:text="@string/chats"
+                    android:gravity="center"
+                    android:textAllCaps="false"
+                    style="@android:style/TextAppearance.Large"/>
+
+            </RelativeLayout>
+
+        </com.google.android.material.appbar.MaterialToolbar>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        app:itemBackground="@color/colorPrimary"
+        app:labelVisibilityMode="unlabeled"
+        app:itemIconTint="@drawable/bottom_navigation_color_selector"
+        app:itemTextColor="@drawable/bottom_navigation_color_selector"
+        app:menu="@menu/bottom_navigation_menu" />
+
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/appBarLayout"
+        android:background="@drawable/pager_background"
+        android:layout_margin="4dp"
+        android:layout_above="@id/bottom_navigation"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+</RelativeLayout>

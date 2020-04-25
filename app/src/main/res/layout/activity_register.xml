@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:id="@+id/register_layout"
+    tools:context=".RegisterActivity">
+
+    <include
+        android:id="@+id/register_bar"
+        layout="@layout/bar_layout" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_gravity="center"
+            android:padding="25dp">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/register_user_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/display_name"
+                app:errorEnabled="true"
+                app:hintEnabled="true"
+                style="@style/textInput"
+                app:hintTextColor="?android:attr/textColorPrimary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName"
+                    android:drawableEnd="@drawable/ic_person_outline"
+                    style="@style/editTextInput"
+                    android:focusable="true" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/register_email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/email"
+                app:errorEnabled="true"
+                app:hintEnabled="true"
+                style="@style/textInput"
+                app:hintTextColor="?android:attr/textColorPrimary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:drawableEnd="@drawable/ic_mail_outline"
+                    style="@style/editTextInput"
+                    android:focusable="true" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/register_password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/password"
+                app:errorEnabled="true"
+                app:hintEnabled="true"
+                app:passwordToggleEnabled="true"
+                style="@style/textInput"
+                app:hintTextColor="?android:attr/textColorPrimary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:drawableEnd="@drawable/ic_mail_outline"
+                    style="@style/editTextInput"
+                    android:focusable="true" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/register_password_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/re_enter_your_password"
+                app:errorEnabled="true"
+                app:hintEnabled="true"
+                app:passwordToggleEnabled="true"
+                style="@style/textInput"
+                app:hintTextColor="?android:attr/textColorPrimary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:drawableEnd="@drawable/ic_mail_outline"
+                    style="@style/editTextInput"
+                    android:focusable="true" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <Button
+                android:id="@+id/btn_register"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:textColor="@color/black"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:text="@string/register"/>
+
+            <TextView
+                android:id="@+id/go_to_login"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/already_have_an_account"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:textColor="@android:color/darker_gray"
+                android:gravity="center"
+                android:layout_margin="12dp"/>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>
