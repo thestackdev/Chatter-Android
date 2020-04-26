@@ -1,45 +1,42 @@
 package com.firebase.chatter;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.firebase.ui.common.ChangeEventType;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Callback;
@@ -53,14 +50,15 @@ import java.util.Map;
 import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-
+import hani.momanii.supernova_emoji_library.Actions.EmojIconActions;
+import hani.momanii.supernova_emoji_library.Helper.EmojiconEditText;
 
 public class MessageActivity extends AppCompatActivity {
 
     private ImageView back_btn , btnSend;
     private CircleImageView user_image;
     private TextView user_name , lastSeen;
-    private EditText messageInput;
+    private EmojiconEditText messageInput;
     private RecyclerView messageRecyclerView;
     private int chatUserIndex , presentIndex = 20;
     private DatabaseReference rootDatabase , chatUserData , messageData , seenRef , chatRef;
@@ -68,6 +66,7 @@ public class MessageActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private FirebaseRecyclerAdapter<Messages , MessageActivity.MessageViewHolder> messageAdapter;
     private FirebaseRecyclerOptions<Messages> messagesFirebaseRecyclerOptions;
+    private ImageView image_pick, camera, emoji;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,15 +78,12 @@ public class MessageActivity extends AppCompatActivity {
         setUpChatPage();
         setUpChatUser();
 
-
         back_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onBackPressed();
             }
         });
-
-        setFirebaseAdapter(presentIndex);
 
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -108,6 +104,62 @@ public class MessageActivity extends AppCompatActivity {
             }
         });
 
+        final RelativeLayout rootView = findViewById(R.id.root);
+
+        emoji.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                EmojIconActions  emojIcon=new EmojIconActions(MessageActivity.this,rootView,messageInput,emoji);
+                emojIcon.ShowEmojIcon();
+                emojIcon.setUseSystemEmoji(true);
+                emojIcon.setKeyboardListener(new EmojIconActions.KeyboardListener() {
+                    @Override
+                    public void onKeyboardOpen() {
+
+                    }
+
+                    @Override
+                    public void onKeyboardClose() {
+
+                    }
+                });
+            }
+        });
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setFirebaseAdapter(presentIndex);
+
+        messageInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+                camera.setVisibility(View.GONE);
+                camera.animate().translationY(0);
+                if (count==0){
+                    camera.setVisibility(View.VISIBLE);
+                    camera.animate().translationY(0);
+                }
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+
+
+            }
+        });
+
     }
 
     private void setUpChatPage() {
@@ -120,7 +172,7 @@ public class MessageActivity extends AppCompatActivity {
         });
     }
 
-    private void setFirebaseAdapter(int presentIndex) {
+    private void setFirebaseAdapter(final int presentIndex) {
 
         // Firebase Content
 
@@ -140,14 +192,13 @@ public class MessageActivity extends AppCompatActivity {
                 String messagePosition = getRef(i).getKey();
 
                 if (messages.getFrom().equals(currentUid)) {
-                    messageViewHolder.messageLayout.setGravity(Gravity.RIGHT);
+                    messageViewHolder.messageLayout.setGravity(Gravity.END);
                     messageViewHolder.message.setText(messages.getMessage());
                     messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_right);
                     messageViewHolder.stamp.setVisibility(View.VISIBLE);
                     messageViewHolder.message_time.setText(messages.getTime());
 
                     String state = "0";
-
                     state = messages.getState();
 
                     if (isConnected()) {
@@ -158,6 +209,7 @@ public class MessageActivity extends AppCompatActivity {
                         } else if(state.equals("2")){
 
                             messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+
                         }
 
                     } else {
@@ -176,11 +228,12 @@ public class MessageActivity extends AppCompatActivity {
                 } else if (messages.getFrom().equals(chatUserId)) {
                     messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
                     messageViewHolder.stamp.setVisibility(View.GONE);
-                    messageViewHolder.messageLayout.setGravity(Gravity.LEFT);
+                    messageViewHolder.messageLayout.setGravity(Gravity.START);
                     messageViewHolder.message.setText(messages.getMessage());
                     messageViewHolder.message_time.setText(messages.getTime());
 
                 }
+
 
 
             }
@@ -194,11 +247,13 @@ public class MessageActivity extends AppCompatActivity {
             @Override
             public void onChildChanged(@NonNull ChangeEventType type, @NonNull DataSnapshot snapshot, int newIndex, int oldIndex) {
                 super.onChildChanged(type, snapshot, newIndex, oldIndex);
-                messageRecyclerView.smoothScrollToPosition(newIndex);
+                messageRecyclerView.smoothScrollToPosition(messageAdapter.getItemCount());
+                Log.d("TEST",snapshot.getKey());
             }
         };
 
         messageRecyclerView.setAdapter(messageAdapter);
+        messageAdapter.notifyDataSetChanged();
         messageAdapter.startListening();
 
         // Firebase Content Completed
@@ -290,6 +345,9 @@ public class MessageActivity extends AppCompatActivity {
         user_name = findViewById(R.id.user_name);
         lastSeen = findViewById(R.id.lastSeen);
         swipeRefreshLayout = findViewById(R.id.swipeToRefresh);
+        image_pick = findViewById(R.id.image_pick);
+        camera = findViewById(R.id.camera);
+        emoji = findViewById(R.id.emoji);
 
         btnSend = findViewById(R.id.send_message);
         messageInput = findViewById(R.id.message_input);
@@ -311,6 +369,7 @@ public class MessageActivity extends AppCompatActivity {
     }
 
     private void sendMessage() {
+
         String message = messageInput.getText().toString();
         if (!TextUtils.isEmpty(message)) {
 
@@ -327,13 +386,11 @@ public class MessageActivity extends AppCompatActivity {
             messageMap.put("from", currentUid);
             messageMap.put("state" , "0");
 
-
             Map<String, Object> messageUserMap = new HashMap<>();
             messageUserMap.put(currentUserRef + "/" + push_id, messageMap);
             messageUserMap.put(chatUserRef + "/" + push_id, messageMap);
 
-            messageInput.setText("");
-
+            messageInput.setText(null);
 
             chatRef.child(chatUserId).child(currentUid).child("index").addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
@@ -357,8 +414,6 @@ public class MessageActivity extends AppCompatActivity {
                 }
             });
 
-
-
             chatRef.child(currentUid).child(chatUserId).child("timeStamp").setValue(ServerValue.TIMESTAMP);
 
             chatRef.child(chatUserId).child(currentUid).child("seen").setValue(false);
@@ -381,14 +436,13 @@ public class MessageActivity extends AppCompatActivity {
     }
 
     public boolean isConnected() {
-            ConnectivityManager connectivityManager = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-            assert connectivityManager != null;
-            NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-            if(networkInfo != null) {
-                return true;
-            } else return false;
-        }
-
+        ConnectivityManager connectivityManager = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        assert connectivityManager != null;
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        if(networkInfo != null) {
+            return true;
+        } else return false;
+    }
 
     @Override
     protected void onStart() {
@@ -452,7 +506,6 @@ public class MessageActivity extends AppCompatActivity {
         });
     }
 
-
     private static class MessageViewHolder extends RecyclerView.ViewHolder {
 
         private TextView message, message_time;
@@ -470,5 +523,4 @@ public class MessageActivity extends AppCompatActivity {
         }
     }
 }
-
 

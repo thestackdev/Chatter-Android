@@ -23,7 +23,7 @@
             android:padding="4dp"
             android:textColor="@color/white"
             style="@android:style/TextAppearance.Medium"
-            android:text="TEST MESSAGE"/>
+            android:text="TEST MESSAGE" />
 
         <TextView
             android:id="@+id/message_time"

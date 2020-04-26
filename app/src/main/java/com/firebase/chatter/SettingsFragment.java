@@ -6,13 +6,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.Fragment;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,13 +13,15 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -51,9 +46,10 @@ import id.zelory.compressor.Compressor;
 
 public class SettingsFragment extends Fragment {
 
-    private TextView user_name, user_status;
+    private TextView user_name, user_status, edit_info, done_editing;
     private CircleImageView user_image;
-    private LinearLayout change_name , change_status , change_email , change_password , logout;
+    private LinearLayout logout;
+    private ImageView change_name, change_status, change_email, change_password;
     private DatabaseReference userData;
     private Uri imageUri;
     private String image;
@@ -80,6 +76,48 @@ public class SettingsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_settings,container,false);
         setUpUiViews();
+
+        edit_info.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                change_name.setVisibility(View.VISIBLE);
+                change_status.setVisibility(View.VISIBLE);
+                change_email.setVisibility(View.VISIBLE);
+                change_password.setVisibility(View.VISIBLE);
+                edit_info.setVisibility(View.GONE);
+                done_editing.setVisibility(View.VISIBLE);
+
+                change_name.animate().translationY(0);
+                change_status.animate().translationY(0);
+                change_email.animate().translationY(0);
+                change_password.animate().translationY(0);
+                edit_info.animate().translationY(0);
+                done_editing.animate().translationY(0);
+
+                done_editing.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        change_name.setVisibility(View.GONE);
+                        change_status.setVisibility(View.GONE);
+                        change_email.setVisibility(View.GONE);
+                        change_password.setVisibility(View.GONE);
+                        done_editing.setVisibility(View.GONE);
+                        edit_info.setVisibility(View.VISIBLE);
+
+                        change_name.animate().translationY(1);
+                        change_status.animate().translationY(1);
+                        change_email.animate().translationY(1);
+                        change_password.animate().translationY(1);
+                        edit_info.animate().translationY(1);
+                        done_editing.animate().translationY(1);
+
+                    }
+                });
+
+            }
+        });
 
         userData.addValueEventListener(new ValueEventListener() {
             @Override
@@ -301,7 +339,6 @@ public class SettingsFragment extends Fragment {
         }
     }
 
-
     private void setUpUiViews() {
 
         current_uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
@@ -311,12 +348,14 @@ public class SettingsFragment extends Fragment {
         user_name = view.findViewById(R.id.settings_name);
         user_image = view.findViewById(R.id.settings_circleImageView);
         user_status = view.findViewById(R.id.settings_status);
-        change_name = view.findViewById(R.id.layout_change_name);
-        change_status = view.findViewById(R.id.layout_change_status);
-        change_email = view.findViewById(R.id.layout_change_email);
-        change_password = view.findViewById(R.id.layout_change_password);
+        change_name = view.findViewById(R.id.change_name);
+        change_status = view.findViewById(R.id.change_status);
+        change_email = view.findViewById(R.id.change_email);
+        change_password = view.findViewById(R.id.change_pass);
         changeImage = view.findViewById(R.id.change_image);
         progressDialog = new ProgressDialog(view.getContext());
+        edit_info = view.findViewById(R.id.edit_info);
+        done_editing = view.findViewById(R.id.done_editing);
 
         mStorageRef = FirebaseStorage.getInstance().getReference();
 

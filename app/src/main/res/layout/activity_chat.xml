@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000"
+    android:id="@+id/root"
     tools:context=".MessageActivity">
 
     <LinearLayout
@@ -82,9 +82,6 @@
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-
-
-
     <RelativeLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
@@ -93,21 +90,138 @@
         android:layout_alignParentStart="true"
         android:orientation="horizontal">
 
-        <EditText
-            android:id="@+id/message_input"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@drawable/search_background"
-            android:ems="14"
-            android:hint="Enter Message..."
-            android:textColor="?android:attr/textColorPrimary"
-            android:inputType="textPersonName"
-            android:layout_margin="4dp"
-            android:paddingBottom="12dp"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
-            android:paddingTop="14dp"
-            android:layout_toStartOf="@+id/send_message"/>
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_toStartOf="@+id/send_message"
+            android:background="@drawable/message_background"
+            android:gravity="center"
+            android:animateLayoutChanges="true">
+
+            <ImageView
+                android:id="@+id/emoji"
+                android:layout_width="0dp"
+                android:layout_weight="0.5"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_insert_emoticon_black_24dp"
+                android:tint="?android:attr/textColorPrimary"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp" />
+
+            <hani.momanii.supernova_emoji_library.Helper.EmojiconEditText
+                android:id="@+id/message_input"
+                android:layout_width="0dp"
+                android:layout_weight="4"
+                android:layout_height="wrap_content"
+                android:ems="14"
+                android:imeOptions="actionSend|flagNoEnterAction"
+                android:hint="Enter Message..."
+                android:textColor="?android:attr/textColorPrimary"
+                android:background="@android:color/transparent"
+                android:inputType="textCapSentences|textMultiLine|textShortMessage"
+                android:textColorHint="?android:attr/colorPrimaryDark"
+                android:maxLines="10"
+                android:lines="6"
+                android:minLines="1"
+                android:scrollbars="vertical"
+                android:padding="10dp"
+                android:layout_margin="4dp"/>
+
+            <ImageView
+                android:id="@+id/image_pick"
+                android:layout_width="0dp"
+                android:layout_weight="0.5"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_attach_file_black_24dp"
+                android:tint="?android:attr/textColorPrimary"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"/>
+
+            <ImageView
+                android:id="@+id/camera"
+                android:layout_width="0dp"
+                android:layout_weight="0.5"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_photo_camera_black_24dp"
+                android:tint="?android:attr/textColorPrimary"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"/>
+
+        </LinearLayout>
+
+        <!--<RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_toStartOf="@+id/send_message"
+            android:background="@drawable/message_background">
+
+            <ImageView
+                android:id="@+id/emoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_alignParentStart="true"
+                android:src="@drawable/ic_insert_emoticon_black_24dp"
+                android:tint="?android:attr/textColorPrimary"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"/>
+
+            <EditText
+                android:id="@+id/message_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="14"
+                android:hint="Enter Message..."
+                android:textColor="?android:attr/textColorPrimary"
+                android:background="@android:color/transparent"
+                android:layout_toStartOf="@+id/image_pick"
+                android:layout_toEndOf="@+id/emoji"
+                android:inputType="textMultiLine"
+                android:textColorHint="?android:attr/colorPrimaryDark"
+                android:maxLines="10"
+                android:lines="6"
+                android:minLines="1"
+                android:scrollbars="vertical"
+                android:padding="10dp"
+                android:layout_margin="4dp"/>
+
+            <ImageView
+                android:id="@+id/image_pick"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toStartOf="@+id/camera"
+                android:src="@drawable/ic_attach_file_black_24dp"
+                android:tint="?android:attr/textColorPrimary"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"/>
+
+            <ImageView
+                android:id="@+id/camera"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/ic_photo_camera_black_24dp"
+                android:tint="?android:attr/textColorPrimary"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"/>
+
+        </RelativeLayout> -->
 
         <ImageView
             android:id="@+id/send_message"
@@ -117,7 +231,8 @@
             android:padding="7dp"
             android:layout_margin="4dp"
             android:src="@drawable/ic_send_black_24dp"
-            android:layout_alignParentEnd="true"/>
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"/>
     </RelativeLayout>
 
 

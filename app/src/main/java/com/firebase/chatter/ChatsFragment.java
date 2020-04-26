@@ -1,26 +1,19 @@
 package com.firebase.chatter;
 
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
@@ -31,7 +24,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
-import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
@@ -86,7 +78,7 @@ public class ChatsFragment extends Fragment {
     public static class ChatsViewHolder extends RecyclerView.ViewHolder {
 
         private TextView name , message;
-        private CircleImageView userImage , online;
+        private CircleImageView userImage;
 
         ChatsViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -94,7 +86,7 @@ public class ChatsFragment extends Fragment {
             name = itemView.findViewById(R.id.single_name);
             message = itemView.findViewById(R.id.single_status);
             userImage = itemView.findViewById(R.id.users_single_image);
-            online = itemView.findViewById(R.id.online);
+            //online = itemView.findViewById(R.id.online);
         }
     }
 
@@ -126,7 +118,7 @@ public class ChatsFragment extends Fragment {
                         chatsViewHolder.name.setText(name);
 
                         if (!online.equals("true")) {
-                            chatsViewHolder.online.setColorFilter(Color.RED);
+                            //chatsViewHolder.online.setColorFilter(Color.RED);
                         }
 
                         if (!thumbnail.equals("default")) {

@@ -1,21 +1,19 @@
 package com.firebase.chatter;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
@@ -95,7 +93,7 @@ public class FriendsFragment extends Fragment {
                         friendsViewHolder.status.setText(friends.getDate());
 
                         if(!online.equals("true")) {
-                            friendsViewHolder.online.setColorFilter(Color.RED);
+                            //friendsViewHolder.online.setColorFilter(Color.RED);
                         }
 
                         if (!thumbnail.equals("default")) {
@@ -178,7 +176,7 @@ public class FriendsFragment extends Fragment {
     private static class FriendsViewHolder extends RecyclerView.ViewHolder {
 
         private TextView name , status;
-        CircleImageView user_image , online;
+        CircleImageView user_image;
 
         FriendsViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -186,7 +184,7 @@ public class FriendsFragment extends Fragment {
             name = itemView.findViewById(R.id.single_name);
             status = itemView.findViewById(R.id.single_status);
             user_image = itemView.findViewById(R.id.users_single_image);
-            online = itemView.findViewById(R.id.online);
+            //online = itemView.findViewById(R.id.online);
 
         }
     }

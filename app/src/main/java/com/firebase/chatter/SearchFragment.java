@@ -1,32 +1,22 @@
 package com.firebase.chatter;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.view.MenuItemCompat;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
@@ -119,7 +109,7 @@ public class SearchFragment extends Fragment {
                             String online = Objects.requireNonNull(dataSnapshot.child("online").getValue()).toString();
 
                             if(!online.equals("true")) {
-                                searchViewHolder.online.setColorFilter(Color.RED);
+                                //searchViewHolder.online.setColorFilter(Color.RED);
                             }
                         }
 
@@ -195,7 +185,7 @@ public class SearchFragment extends Fragment {
     private static class SearchViewHolder extends RecyclerView.ViewHolder {
         private TextView name , status;
         private CircleImageView user_image;
-        private ImageView online;
+        //private ImageView online;
 
         SearchViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -203,7 +193,7 @@ public class SearchFragment extends Fragment {
             user_image = itemView.findViewById(R.id.users_single_image);
             name = itemView.findViewById(R.id.single_name);
             status = itemView.findViewById(R.id.single_status);
-            online = itemView.findViewById(R.id.online);
+            //online = itemView.findViewById(R.id.online);
 
         }
     }

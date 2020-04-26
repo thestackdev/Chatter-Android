@@ -4,49 +4,50 @@
     android:id="@+id/onClickSingleLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:gravity="center">
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:padding="7dp"
-        android:gravity="center">
-
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/users_single_image"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@drawable/avatar" />
-
-    </LinearLayout>
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/users_single_image"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/avatar"
+        android:layout_gravity="center"
+        android:layout_margin="7dp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="5dp"
+        android:layout_gravity="center"
         android:orientation="vertical">
 
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:gravity="center">
 
             <TextView
-                android:paddingRight="10dp"
                 android:id="@+id/single_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="User Name"
+                android:layout_alignParentStart="true"
+                android:gravity="center"
                 style="@android:style/TextAppearance.Large"
                 android:textStyle="bold"/>
 
-            <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/online"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
-                android:layout_gravity="center"
-                android:src="@drawable/online" />
+            <TextView
+                android:id="@+id/time_user"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="TIME"
+                android:layout_centerVertical="true"
+                style="@android:style/TextAppearance.Small"
+                android:layout_marginEnd="12dp"/>
 
-        </LinearLayout>
+        </RelativeLayout>
 
         <TextView
             android:id="@+id/single_status"
