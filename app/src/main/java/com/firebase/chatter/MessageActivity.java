@@ -5,9 +5,7 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -24,9 +22,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -49,7 +45,6 @@ import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.EventListener;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -64,9 +59,7 @@ public class MessageActivity extends AppCompatActivity {
 
     private Thread thread;
 
-    private ChildEventListener childEventListener;
-
-    private ValueEventListener valueEventListener;
+    private boolean check = true;
 
     private ImageView back_btn , btnSend;
     private CircleImageView user_image;
@@ -74,12 +67,13 @@ public class MessageActivity extends AppCompatActivity {
     private EmojiconEditText messageInput;
     private RecyclerView messageRecyclerView;
     private int presentIndex = 20;
-    private DatabaseReference rootDatabase , usersData , messageData , seenRef , chatRef , currentChatRef , userChatRef;
+    private DatabaseReference rootDatabase , usersData , myMessageData , userMessageData , chatRef , currentChatRef , userChatRef;
     private String currentUid , chatUserId , currentTime , push_id;
     private SwipeRefreshLayout swipeRefreshLayout;
-    private FirebaseRecyclerAdapter<Messages , MessageActivity.MessageViewHolder> messageAdapter;
+    FirebaseRecyclerAdapter<Messages, MessageViewHolder> messageAdapter;
     private FirebaseRecyclerOptions<Messages> messagesFirebaseRecyclerOptions;
-    private ImageView image_pick, camera, emoji;
+    private ImageView camera;
+    private ImageView icons;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,20 +86,19 @@ public class MessageActivity extends AppCompatActivity {
         setUpChatPage();
 
 
-
-
-
-
         back_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onBackPressed();
+                check = false;
+                thread.interrupt();
             }
         });
 
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+
                 presentIndex = presentIndex + 20;
 
                 setFirebaseAdapter(presentIndex);
@@ -124,11 +117,11 @@ public class MessageActivity extends AppCompatActivity {
 
         final RelativeLayout rootView = findViewById(R.id.root);
 
-        emoji.setOnClickListener(new View.OnClickListener() {
+        icons.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                EmojIconActions  emojIcon=new EmojIconActions(MessageActivity.this,rootView,messageInput,emoji);
+                EmojIconActions  emojIcon=new EmojIconActions(MessageActivity.this,rootView,messageInput,icons);
                 emojIcon.ShowEmojIcon();
                 emojIcon.setUseSystemEmoji(true);
                 emojIcon.setKeyboardListener(new EmojIconActions.KeyboardListener() {
@@ -146,8 +139,6 @@ public class MessageActivity extends AppCompatActivity {
         });
 
     }
-
- //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private void sendMessage() {
         final String message = messageInput.getText().toString();
@@ -179,10 +170,10 @@ public class MessageActivity extends AppCompatActivity {
 
             messageInput.setText("");
 
-            chatRef.child(currentUid).child(chatUserId).child("timeStamp").setValue(ServerValue.TIMESTAMP);
+            currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
 
-            chatRef.child(chatUserId).child(currentUid).child("seen").setValue(false);
-            chatRef.child(chatUserId).child(currentUid).child("timeStamp").setValue(ServerValue.TIMESTAMP);
+            userChatRef.child("seen").setValue(false);
+            userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
 
             rootDatabase.updateChildren(messageUserMap, new DatabaseReference.CompletionListener() {
                 @Override
@@ -191,16 +182,16 @@ public class MessageActivity extends AppCompatActivity {
 
                         /////////////////////////////////////////////////////////////////////
 
-                        chatRef.child(chatUserId).child(currentUid).child("lastSeenMsg").addListenerForSingleValueEvent(new ValueEventListener() {
+                        userChatRef.child("lastSeenMsg").addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                 String uid = Objects.requireNonNull(dataSnapshot.getValue()).toString();
 
                                 if(uid.equals("null")) {
-                                    chatRef.child(chatUserId).child(currentUid).child("lastSeenMsg").setValue(push_id).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    userChatRef.child("lastSeenMsg").setValue(push_id).addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override
                                         public void onSuccess(Void aVoid) {
-                                            chatRef.child(currentUid).child(chatUserId).child("lastSeenMsg").setValue(push_id);
+                                            currentChatRef.child("lastSeenMsg").setValue(push_id);
                                         }
                                     });
                                 }
@@ -217,7 +208,7 @@ public class MessageActivity extends AppCompatActivity {
 
                         ////////////////////////////////////////////////////////////////////////////////////////
 
-                            chatRef.child(currentUid).child(chatUserId).child("lastMsg").addListenerForSingleValueEvent(new ValueEventListener() {
+                            currentChatRef.child("lastMsg").addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -225,7 +216,7 @@ public class MessageActivity extends AppCompatActivity {
 
                                     if(!lastMsg.equals("null")) {
 
-                                        messageData.orderByKey().startAt(lastMsg).addChildEventListener(new ChildEventListener() {
+                                        myMessageData.orderByKey().startAt(lastMsg).addChildEventListener(new ChildEventListener() {
                                             @Override
                                             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                                                 String uid = dataSnapshot.getKey();
@@ -234,7 +225,7 @@ public class MessageActivity extends AppCompatActivity {
 
                                                     if(!uid.equals(lastMsg)) {
 
-                                                        messageData.child(uid).child("state").setValue("1").addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                        myMessageData.child(uid).child("state").setValue("1").addOnSuccessListener(new OnSuccessListener<Void>() {
                                                             @Override
                                                             public void onSuccess(Void aVoid) {
 
@@ -265,9 +256,10 @@ public class MessageActivity extends AppCompatActivity {
 
                                             }
                                         });
+
                                     } else {
                                         if(isConnected()) {
-                                            messageData.child(push_id).child("state").setValue("1").addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            myMessageData.child(push_id).child("state").setValue("1").addOnSuccessListener(new OnSuccessListener<Void>() {
                                                 @Override
                                                 public void onSuccess(Void aVoid) {
 
@@ -283,10 +275,10 @@ public class MessageActivity extends AppCompatActivity {
 
                                 }
                             });
-                            chatRef.child(chatUserId).child(currentUid).child("lastMsg").setValue(push_id).addOnSuccessListener(new OnSuccessListener<Void>() {
+                            userChatRef.child("lastMsg").setValue(push_id).addOnSuccessListener(new OnSuccessListener<Void>() {
                                 @Override
                                 public void onSuccess(Void aVoid) {
-                                    chatRef.child(currentUid).child(chatUserId).child("lastMsg").setValue(push_id).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    currentChatRef.child("lastMsg").setValue(push_id).addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override
                                         public void onSuccess(Void aVoid) {
 
@@ -304,13 +296,6 @@ public class MessageActivity extends AppCompatActivity {
 
         }
     }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-    /////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
     @Override
     protected void onResume() {
@@ -343,7 +328,6 @@ public class MessageActivity extends AppCompatActivity {
 
     }
 
-
     private void setUpUiViews() {
 
         back_btn = findViewById(R.id.back_btn);
@@ -351,9 +335,9 @@ public class MessageActivity extends AppCompatActivity {
         user_name = findViewById(R.id.user_name);
         lastSeen = findViewById(R.id.lastSeen);
         swipeRefreshLayout = findViewById(R.id.swipeToRefresh);
-        image_pick = findViewById(R.id.image_pick);
+        ImageView image_pick = findViewById(R.id.image_pick);
         camera = findViewById(R.id.camera);
-        emoji = findViewById(R.id.emoji);
+        icons = findViewById(R.id.emoji);
 
         btnSend = findViewById(R.id.send_message);
         messageInput = findViewById(R.id.message_input);
@@ -377,22 +361,26 @@ public class MessageActivity extends AppCompatActivity {
     private void setUpReferences()  {
 
         rootDatabase = FirebaseDatabase.getInstance().getReference();
+        rootDatabase.keepSynced(true);
 
         chatUserId = getIntent().getStringExtra("profile_user_id");
+
         usersData = rootDatabase.child("Users");
 
         currentUid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
 
-        messageData = rootDatabase.child("messages").child(currentUid).child(chatUserId);
-        messageData.keepSynced(true);
+        myMessageData = rootDatabase.child("messages").child(currentUid).child(chatUserId);
 
-        chatRef = FirebaseDatabase.getInstance().getReference().child("Chat");
+        userMessageData = rootDatabase.child("messages").child(chatUserId).child(currentUid);
 
-      //  currentChatRef = rootDatabase.child("Chat").child()
+        chatRef = rootDatabase.child("Chat");
 
-        seenRef = rootDatabase.child("messages").child(chatUserId).child(currentUid);
+        currentChatRef = chatRef.child(currentUid).child(chatUserId);
+
+        userChatRef = chatRef.child(chatUserId).child(currentUid);
 
     }
+
     private void setUpChatUser() {
 
         final String thumbnail = getIntent().getStringExtra("thumbnail");
@@ -404,6 +392,7 @@ public class MessageActivity extends AppCompatActivity {
         user_name.setText(userName);
 
 
+        assert thumbnail != null;
         if (!thumbnail.equals("default")) {
             Picasso.get().load(thumbnail).networkPolicy(NetworkPolicy.OFFLINE)
                     .placeholder(R.drawable.avatar).into(user_image, new Callback() {
@@ -456,7 +445,7 @@ public class MessageActivity extends AppCompatActivity {
 
     private void setUpChatPage() {
 
-        chatRef.child(currentUid).child(chatUserId).child("seen").setValue(true).addOnSuccessListener(new OnSuccessListener<Void>() {
+        currentChatRef.child("seen").setValue(true).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
 
@@ -479,9 +468,12 @@ public class MessageActivity extends AppCompatActivity {
         // Firebase Content
 
         messagesFirebaseRecyclerOptions = new FirebaseRecyclerOptions.Builder<Messages>()
-                .setQuery(messageData.limitToLast(presentIndex) , Messages.class).build();
+                .setQuery(myMessageData.limitToLast(presentIndex) , Messages.class).build();
 
         messageAdapter = new FirebaseRecyclerAdapter<Messages, MessageViewHolder>(messagesFirebaseRecyclerOptions) {
+
+
+
             @NonNull
             @Override
             public MessageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -501,7 +493,7 @@ public class MessageActivity extends AppCompatActivity {
 
                     String state = messages.getState();
 
-                    if(state.equals("2")) {
+                    if (state.equals("2")) {
                         messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
                     } else if (state.equals("1")) {
                         messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
@@ -518,12 +510,14 @@ public class MessageActivity extends AppCompatActivity {
 
                 }
 
-
             }
 
 
             @Override
             public int getItemCount() {
+
+
+
                 return super.getItemCount();
             }
 
@@ -535,6 +529,7 @@ public class MessageActivity extends AppCompatActivity {
         };
 
         messageRecyclerView.setAdapter(messageAdapter);
+
         messageAdapter.startListening();
 
         // Firebase Content Completed
@@ -555,6 +550,7 @@ public class MessageActivity extends AppCompatActivity {
             messageLayout = itemView.findViewById(R.id.message_single_layout);
             layout_bg = itemView.findViewById(R.id.layout_bg);
             message_time = itemView.findViewById(R.id.message_time);
+
         }
     }
 
@@ -565,83 +561,79 @@ public class MessageActivity extends AppCompatActivity {
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while (!thread.isInterrupted()) {
+
+                while (check) {
 
                     try {
 
-                        chatRef.child(currentUid).child(chatUserId).child("lastSeenMsg").addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                String uid = Objects.requireNonNull(dataSnapshot.getValue()).toString();
-
-                                Log.i("TAG", "onDataChange: "+uid);
-
-                                childEventListener = messageData.orderByKey().startAt(uid).addChildEventListener(new ChildEventListener() {
-                                    @Override
-                                    public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                        String from = Objects.requireNonNull(dataSnapshot.child("from").getValue()).toString();
-
-                                        Log.i("TAG", "onChildAdded: from "+from);
-
-                                        if (!from.equals(currentUid)) {
-                                            final String key = dataSnapshot.getKey();
-                                            assert key != null;
-
-                                            seenRef.child(key).child("state").setValue("2").addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                @Override
-                                                public void onSuccess(Void aVoid) {
-                                                    chatRef.child(currentUid).child(chatUserId).child("lastSeenMsg").setValue(key).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                        @Override
-                                                        public void onSuccess(Void aVoid) {
-
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        }
-
-                                    }
-
-                                    @Override
-                                    public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                    }
-
-                                    @Override
-                                    public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-                                    }
-
-                                    @Override
-                                    public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                            }
-                        });
-
                         Thread.sleep(500);
+
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+
+                    currentChatRef.child("lastSeenMsg").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                            String uid = Objects.requireNonNull(dataSnapshot.getValue()).toString();
+
+                            myMessageData.orderByKey().startAt(uid).addChildEventListener(new ChildEventListener() {
+                                @Override
+                                public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                                    String from = Objects.requireNonNull(dataSnapshot.child("from").getValue()).toString();
+
+                                    if (!from.equals(currentUid) && check) {
+
+                                        final String key = dataSnapshot.getKey();
+                                        assert key != null;
+
+                                        userMessageData.child(key).child("state").setValue("2").addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
+                                                chatRef.child(currentUid).child(chatUserId).child("lastSeenMsg").setValue(key).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                    @Override
+                                                    public void onSuccess(Void aVoid) {
+
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+
+                                }
+
+                                @Override
+                                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                                }
+
+                                @Override
+                                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+                                }
+
+                                @Override
+                                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
                 }
             }
         }); thread.start();
-
-
-
 
 
     }
@@ -649,12 +641,12 @@ public class MessageActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
 
-        rootDatabase.removeEventListener(childEventListener);
+        check = false;
 
         thread.interrupt();
 
         super.onStop();
-        Log.i("TAG", "onStop: ");
+
 
     }
 }

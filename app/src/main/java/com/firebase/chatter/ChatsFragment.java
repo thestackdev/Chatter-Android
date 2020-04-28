@@ -1,6 +1,8 @@
 package com.firebase.chatter;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -42,7 +44,6 @@ public class ChatsFragment extends Fragment {
     private DatabaseReference chatRef;
     private String name;
     private String thumbnail;
-    private String online;
     private String image;
 
     public ChatsFragment() {
@@ -77,7 +78,7 @@ public class ChatsFragment extends Fragment {
 
     public static class ChatsViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView name , message;
+        private TextView name , message , time;
         private CircleImageView userImage;
 
         ChatsViewHolder(@NonNull View itemView) {
@@ -85,8 +86,9 @@ public class ChatsFragment extends Fragment {
 
             name = itemView.findViewById(R.id.single_name);
             message = itemView.findViewById(R.id.single_status);
+            time = itemView.findViewById(R.id.time_user);
             userImage = itemView.findViewById(R.id.users_single_image);
-            //online = itemView.findViewById(R.id.online);
+
         }
     }
 
@@ -116,6 +118,21 @@ public class ChatsFragment extends Fragment {
 
                         chatsViewHolder.name.setText(name);
 
+                        chatsViewHolder.userImage.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (!image.equals("default")) {
+                                    Uri imageUri = Uri.parse(image);
+                                    Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
+                                    intent.setData(imageUri);
+                                    startActivity(intent);
+                                } else {
+                                    Toast.makeText(v.getContext(), "No Profile Picture", Toast.LENGTH_SHORT).show();
+                                }
+
+                            }
+                        });
+
                         if (!thumbnail.equals("default")) {
                             Picasso.get().load(thumbnail).networkPolicy(NetworkPolicy.OFFLINE)
                                     .placeholder(R.drawable.avatar).into(chatsViewHolder.userImage, new Callback() {
@@ -137,10 +154,19 @@ public class ChatsFragment extends Fragment {
                         lastMsgQuery.addChildEventListener(new ChildEventListener() {
                             @Override
                             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                                String time = Objects.requireNonNull(dataSnapshot.child("time").getValue()).toString();
+
+                                chatsViewHolder.time.setText(time);
+
+                                String message = Objects.requireNonNull(dataSnapshot.child("message").getValue()).toString();
+                                chatsViewHolder.message.setText(message);
+
                                 if (!chat.seen) {
-                                    chatsViewHolder.message.setText("new message");
-                                } else {
-                                    chatsViewHolder.message.setText(Objects.requireNonNull(dataSnapshot.child("message").getValue()).toString());
+
+                                    chatsViewHolder.message.setTypeface(null , Typeface.BOLD);
+                                    chatsViewHolder.message.setTextColor(Color.WHITE);
+                                    chatsViewHolder.message.setTextSize(25);
 
                                 }
 
@@ -174,21 +200,6 @@ public class ChatsFragment extends Fragment {
                     }
                 });
 
-                chatsViewHolder.userImage.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (!image.equals("default")) {
-                            Uri imageUri = Uri.parse(image);
-                            Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
-                            intent.setData(imageUri);
-                            startActivity(intent);
-                        } else {
-                            Toast.makeText(v.getContext(), "No Profile Picture", Toast.LENGTH_SHORT).show();
-                        }
-
-                    }
-                });
-
                 chatsViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -210,6 +221,7 @@ public class ChatsFragment extends Fragment {
                 return new ChatsViewHolder(view);
             }
         };
+
         recyclerView.setAdapter(adapter);
         adapter.startListening();
     }
