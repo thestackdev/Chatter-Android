@@ -112,14 +112,9 @@ public class ChatsFragment extends Fragment {
 
                         name = Objects.requireNonNull(dataSnapshot.child("name").getValue()).toString();
                         thumbnail = Objects.requireNonNull(dataSnapshot.child("thumbnail").getValue()).toString();
-                        online = Objects.requireNonNull(dataSnapshot.child("online").getValue()).toString();
                         image = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
 
                         chatsViewHolder.name.setText(name);
-
-                        if (!online.equals("true")) {
-                            //chatsViewHolder.online.setColorFilter(Color.RED);
-                        }
 
                         if (!thumbnail.equals("default")) {
                             Picasso.get().load(thumbnail).networkPolicy(NetworkPolicy.OFFLINE)
@@ -200,6 +195,8 @@ public class ChatsFragment extends Fragment {
                         Intent intent = new Intent(v.getContext(), MessageActivity.class);
                         intent.putExtra("profile_user_id", chatUid);
                         intent.putExtra("userName", name);
+                        intent.putExtra("thumbnail", thumbnail);
+                        intent.putExtra("image" , image);
                         startActivity(intent);
                     }
                 });

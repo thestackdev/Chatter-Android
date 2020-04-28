@@ -40,14 +40,16 @@ import java.util.Objects;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ProfileActivity extends AppCompatActivity {
+
+    // profile user details
     private String profile_user_id;
-    private DatabaseReference profileuserData;
+    private String userName , userThumbnail , userStatus , userImage;
+
     private Button btn1, btn2, btn3;
     private TextView profile_name, profile_status;
-    private DatabaseReference friends_database , frq_database , rootdatabase , chatRef;
+    private DatabaseReference friends_database , frq_database , rootDatabase , chatRef;
     private String current_uid;
     private String current_state;
-    private String userName;
     private ImageView profileImage;
 
     @Override
@@ -67,11 +69,11 @@ public class ProfileActivity extends AppCompatActivity {
         profileImage = findViewById(R.id.profile_imageView);
         profile_user_id = getIntent().getStringExtra("profile_user_id");
 
-        profileuserData = FirebaseDatabase.getInstance().getReference().child("Users").child(profile_user_id);
-        profileuserData.keepSynced(true);
+        DatabaseReference profileUserData = FirebaseDatabase.getInstance().getReference().child("Users").child(profile_user_id);
+        profileUserData.keepSynced(true);
 
-        rootdatabase = FirebaseDatabase.getInstance().getReference();
-        rootdatabase.keepSynced(true);
+        rootDatabase = FirebaseDatabase.getInstance().getReference();
+        rootDatabase.keepSynced(true);
 
         frq_database = FirebaseDatabase.getInstance().getReference().child("Friend_req");
         frq_database.keepSynced(true);
@@ -86,7 +88,7 @@ public class ProfileActivity extends AppCompatActivity {
         TextView title = findViewById(R.id.title_toolbar);
         title.setText("Profile");
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
 
      //   btn1.setVisibility(View.INVISIBLE);
     //    btn2.setVisibility(View.INVISIBLE);
@@ -97,16 +99,21 @@ public class ProfileActivity extends AppCompatActivity {
     //    btn3.setEnabled(false);
 
 
-        profileuserData.addValueEventListener(new ValueEventListener() {
+        profileUserData.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 userName = Objects.requireNonNull(dataSnapshot.child("name").getValue()).toString();
                 profile_name.setText(userName);
-                profile_status.setText(Objects.requireNonNull(dataSnapshot.child("status").getValue()).toString());
-                final String thumbnail = Objects.requireNonNull(dataSnapshot.child("thumbnail").getValue()).toString();
 
-                if (!thumbnail.equals("default")) {
-                    Picasso.get().load(thumbnail).networkPolicy(NetworkPolicy.OFFLINE)
+                userStatus = Objects.requireNonNull(dataSnapshot.child("status").getValue()).toString();
+                profile_status.setText(userStatus);
+
+                userThumbnail = Objects.requireNonNull(dataSnapshot.child("thumbnail").getValue()).toString();
+
+                userImage = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
+
+                if (!userThumbnail.equals("default")) {
+                    Picasso.get().load(userThumbnail).networkPolicy(NetworkPolicy.OFFLINE)
                             .placeholder(R.drawable.avatar).into(profileImage, new Callback() {
                         @Override
                         public void onSuccess() {
@@ -114,7 +121,7 @@ public class ProfileActivity extends AppCompatActivity {
 
                         @Override
                         public void onError(Exception e) {
-                            Picasso.get().load(thumbnail).placeholder(R.drawable.avatar).into(profileImage);
+                            Picasso.get().load(userThumbnail).placeholder(R.drawable.avatar).into(profileImage);
 
                         }
                     });
@@ -201,7 +208,7 @@ public class ProfileActivity extends AppCompatActivity {
                     Map request_map = new HashMap();
                     request_map.put("Friend_req/" + current_uid + "/" + profile_user_id + "/req_type", "sent");
                     request_map.put("Friend_req/" + profile_user_id + "/" + current_uid + "/req_type", "received");
-                    rootdatabase.updateChildren(request_map, new DatabaseReference.CompletionListener() {
+                    rootDatabase.updateChildren(request_map, new DatabaseReference.CompletionListener() {
                         @Override
                         public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                             if (databaseError == null) {
@@ -246,7 +253,7 @@ public class ProfileActivity extends AppCompatActivity {
                             friendsMap.put("Friend_req/"+current_uid+"/"+profile_user_id,null);
                             friendsMap.put("Friend_req/"+profile_user_id+"/"+current_uid,null);
 
-                            rootdatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
+                            rootDatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
                                 @Override
                                 public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                                     if(databaseError == null) {
@@ -274,7 +281,7 @@ public class ProfileActivity extends AppCompatActivity {
                     friendsMap.put("Friends/"+current_uid+"/"+profile_user_id, null);
                     friendsMap.put("Friends/"+profile_user_id+"/"+current_uid, null);
 
-                    rootdatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
+                    rootDatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
                         @Override
                         public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                             if(databaseError == null) {
@@ -300,28 +307,27 @@ public class ProfileActivity extends AppCompatActivity {
                 if(current_state.equals("friends")) {
 
                     chatRef.child(current_uid).addValueEventListener(new ValueEventListener() {
-                                                                         @Override
-                                                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                                             if (!dataSnapshot.hasChild(profile_user_id)) {
+                         @Override
+                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                             if (!dataSnapshot.hasChild(profile_user_id)) {
+                                 Map addChatMap = new HashMap();
+                                 addChatMap.put("seen", false);
+                                 addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
+                                 addChatMap.put("lastMsg", "null");
+                                 addChatMap.put("lastSeenMsg", "null");
 
-                                                                                 Map addChatMap = new HashMap();
-                                                                                 addChatMap.put("seen", false);
-                                                                                 addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
-                                                                                 addChatMap.put("index", 0);
-                                                                                 addChatMap.put("toBeSeen", 0);
+                                 Map chatUserMap = new HashMap();
+                                 chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);
+                                 chatUserMap.put("Chat/" + profile_user_id + "/" + current_uid, addChatMap);
 
-                                                                                 Map chatUserMap = new HashMap();
-                                                                                 chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);
-                                                                                 chatUserMap.put("Chat/" + profile_user_id + "/" + current_uid, addChatMap);
+                                 rootDatabase.updateChildren(chatUserMap, new DatabaseReference.CompletionListener() {
+                                     @Override
+                                     public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
 
-                                                                                 rootdatabase.updateChildren(chatUserMap, new DatabaseReference.CompletionListener() {
-                                                                                     @Override
-                                                                                     public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-
-                                                                                     }
-                                                                                 });
-                                                                             }
-                                                                         }
+                                     }
+                                 });
+                             }
+                         }
 
                         @Override
                         public void onCancelled(@NonNull DatabaseError databaseError) {
@@ -332,7 +338,10 @@ public class ProfileActivity extends AppCompatActivity {
                     Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
                     intent.putExtra("profile_user_id",profile_user_id);
                     intent.putExtra("userName",userName);
+                    intent.putExtra("thumbnail" , userThumbnail);
+                    intent.putExtra("image" , userImage);
                     startActivity(intent);
+
                 } else {
                     friends_database.child(current_uid).addValueEventListener(new ValueEventListener() {
                         @Override
@@ -342,7 +351,7 @@ public class ProfileActivity extends AppCompatActivity {
                             friendsMap.put("Friend_req/"+current_uid+"/"+profile_user_id,null);
                             friendsMap.put("Friend_req/"+profile_user_id+"/"+current_uid,null);
 
-                            rootdatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
+                            rootDatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
                                 @Override
                                 public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                                     if(databaseError == null) {

@@ -243,27 +243,17 @@ public class SettingsFragment extends Fragment {
 
     private void callGalleryIntent() {
 
-        Intent galleryIntent = new Intent();
-        galleryIntent.setType("image/*");
-        galleryIntent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(galleryIntent, GALLERY_PICK);
+        Intent intent = CropImage.activity()
+                .setAspectRatio(1, 1)
+                .setMinCropWindowSize(500, 500)
+                .getIntent(Objects.requireNonNull(getContext()));
+        startActivityForResult(intent , CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE);
+
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == GALLERY_PICK && data != null) {
-          //  Uri mImageUri = data.getData();
-
-            Log.i("TAG", "onActivityResult: "+ "entered");
-
-            Intent intent = CropImage.activity()
-                    .setAspectRatio(1, 1)
-                    .setMinCropWindowSize(500, 500)
-                    .getIntent(getContext());
-            startActivityForResult(intent , CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE);
-
-        }
 
         if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE && CropImage.getActivityResult(data) != null) {
 
