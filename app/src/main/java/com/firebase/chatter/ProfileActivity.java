@@ -311,10 +311,11 @@ public class ProfileActivity extends AppCompatActivity {
                          public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                              if (!dataSnapshot.hasChild(profile_user_id)) {
                                  Map addChatMap = new HashMap();
+
                                  addChatMap.put("seen", false);
                                  addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
-                                 addChatMap.put("lastMsg", "null");
                                  addChatMap.put("lastSeenMsg", "null");
+                                 addChatMap.put("messageNode" , current_uid+profile_user_id);
 
                                  Map chatUserMap = new HashMap();
                                  chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);
@@ -323,7 +324,7 @@ public class ProfileActivity extends AppCompatActivity {
                                  rootDatabase.updateChildren(chatUserMap, new DatabaseReference.CompletionListener() {
                                      @Override
                                      public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-
+                                         rootDatabase.child("messages").child(current_uid+profile_user_id).child("lastMsg").setValue("null");
                                      }
                                  });
                              }
@@ -335,12 +336,27 @@ public class ProfileActivity extends AppCompatActivity {
                         }
                     });
 
-                    Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
-                    intent.putExtra("profile_user_id",profile_user_id);
-                    intent.putExtra("userName",userName);
-                    intent.putExtra("thumbnail" , userThumbnail);
-                    intent.putExtra("image" , userImage);
-                    startActivity(intent);
+                    rootDatabase.child("Chat").child(current_uid).child(profile_user_id).child("messageNode")
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                    String messageNode = Objects.requireNonNull(dataSnapshot.getValue()).toString();
+                                    Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
+                                    intent.putExtra("profile_user_id",profile_user_id);
+                                    intent.putExtra("userName",userName);
+                                    intent.putExtra("thumbnail" , userThumbnail);
+                                    intent.putExtra("image" , userImage);
+                                    intent.putExtra("messageNode" , messageNode);
+                                    startActivity(intent);
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                }
+                            });
+
+
 
                 } else {
                     friends_database.child(current_uid).addValueEventListener(new ValueEventListener() {

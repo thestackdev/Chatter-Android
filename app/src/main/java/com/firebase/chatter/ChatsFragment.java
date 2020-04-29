@@ -66,7 +66,7 @@ public class ChatsFragment extends Fragment {
         DatabaseReference rootData = FirebaseDatabase.getInstance().getReference();
         String current_Uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
 
-        messageData = rootData.child("messages").child(current_Uid);
+        messageData = rootData.child("messages");
 
         usersData = rootData.child("Users");
 
@@ -110,28 +110,12 @@ public class ChatsFragment extends Fragment {
                 usersData.child(chatUid).addValueEventListener(new ValueEventListener() {
 
                     @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
 
                         name = Objects.requireNonNull(dataSnapshot.child("name").getValue()).toString();
                         thumbnail = Objects.requireNonNull(dataSnapshot.child("thumbnail").getValue()).toString();
-                        image = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
 
                         chatsViewHolder.name.setText(name);
-
-                        chatsViewHolder.userImage.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                if (!image.equals("default")) {
-                                    Uri imageUri = Uri.parse(image);
-                                    Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
-                                    intent.setData(imageUri);
-                                    startActivity(intent);
-                                } else {
-                                    Toast.makeText(v.getContext(), "No Profile Picture", Toast.LENGTH_SHORT).show();
-                                }
-
-                            }
-                        });
 
                         if (!thumbnail.equals("default")) {
                             Picasso.get().load(thumbnail).networkPolicy(NetworkPolicy.OFFLINE)
@@ -148,8 +132,25 @@ public class ChatsFragment extends Fragment {
                             });
                         }
 
+                        chatsViewHolder.userImage.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (!thumbnail.equals("default")) {
 
-                        Query lastMsgQuery = messageData.child(chatUid).limitToLast(1);
+                                    image = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
+                                    Uri imageUri = Uri.parse(image);
+                                    Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
+                                    intent.setData(imageUri);
+                                    startActivity(intent);
+
+                                } else {
+                                    Toast.makeText(v.getContext(), "No Profile Picture", Toast.LENGTH_SHORT).show();
+                                }
+
+                            }
+                        });
+
+                        Query lastMsgQuery = messageData.child(chat.messageNode).child("start").limitToLast(1);
 
                         lastMsgQuery.addChildEventListener(new ChildEventListener() {
                             @Override
@@ -208,6 +209,7 @@ public class ChatsFragment extends Fragment {
                         intent.putExtra("userName", name);
                         intent.putExtra("thumbnail", thumbnail);
                         intent.putExtra("image" , image);
+                        intent.putExtra("messageNode" , chat.messageNode);
                         startActivity(intent);
                     }
                 });
