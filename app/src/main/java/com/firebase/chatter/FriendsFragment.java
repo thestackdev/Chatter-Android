@@ -78,6 +78,7 @@ public class FriendsFragment extends Fragment {
             protected void onBindViewHolder(@NonNull final FriendsViewHolder friendsViewHolder, int i, @NonNull final Friends friends) {
 
                 final String friendUId = getRef(i).getKey();
+                friendsViewHolder.time_user.setVisibility(View.GONE);
 
                 assert friendUId != null;
                 usersData.child(friendUId).addValueEventListener(new ValueEventListener() {
@@ -175,7 +176,7 @@ public class FriendsFragment extends Fragment {
 
     private static class FriendsViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView name , status;
+        private TextView name , status, time_user;
         CircleImageView user_image;
 
         FriendsViewHolder(@NonNull View itemView) {
@@ -184,6 +185,7 @@ public class FriendsFragment extends Fragment {
             name = itemView.findViewById(R.id.single_name);
             status = itemView.findViewById(R.id.single_status);
             user_image = itemView.findViewById(R.id.users_single_image);
+            time_user = itemView.findViewById(R.id.time_user);
             //online = itemView.findViewById(R.id.online);
 
         }

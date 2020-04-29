@@ -78,6 +78,8 @@ public class FriendRequests extends Fragment {
             @Override
               protected void onBindViewHolder(@NonNull final RequestsViewHolder requestsViewHolder, int i, @NonNull final Friend_req friend_req) {
 
+                requestsViewHolder.user_time.setVisibility(View.GONE);
+
                   final String uid = getRef(i).getKey();
 
                   assert uid != null;
@@ -165,7 +167,7 @@ public class FriendRequests extends Fragment {
 
     private static class RequestsViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView name , type;
+        private TextView name , type, user_time;
         private CircleImageView userImage;
 
         RequestsViewHolder(@NonNull View itemView) {
@@ -174,6 +176,7 @@ public class FriendRequests extends Fragment {
             name = itemView.findViewById(R.id.single_name);
             type = itemView.findViewById(R.id.single_status);
             userImage = itemView.findViewById(R.id.users_single_image);
+            user_time = itemView.findViewById(R.id.time_user);
             //online = itemView.findViewById(R.id.online);
 
         }

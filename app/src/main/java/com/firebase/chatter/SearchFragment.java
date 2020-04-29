@@ -41,11 +41,6 @@ public class SearchFragment extends Fragment {
     private String current_user_id;
     private FirebaseRecyclerAdapter<Users , SearchFragment.SearchViewHolder> adapter;
 
-
-    SearchFragment() {
-
-    }
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

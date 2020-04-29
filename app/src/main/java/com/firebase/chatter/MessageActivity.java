@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -286,7 +285,7 @@ public class MessageActivity extends AppCompatActivity {
 
                 camera.setVisibility(View.GONE);
                 camera.animate().translationY(0);
-                if (count == 0) {
+                if (messageInput.getText().toString().length() ==0) {
                     camera.setVisibility(View.VISIBLE);
                     camera.animate().translationY(0);
                 }
@@ -556,53 +555,56 @@ public class MessageActivity extends AppCompatActivity {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                                    String lastMsg = Objects.requireNonNull(dataSnapshot.getValue()).toString();
+                                    String lastMsg = dataSnapshot.getValue(String.class);
 
-                                    if (check && !lastMsg.equals(lastSeenMsg)) {
+                                    if (lastMsg != null && !lastMsg.isEmpty()){
 
-                                        messageData.child("start").orderByKey().startAt(lastSeenMsg).addChildEventListener(new ChildEventListener() {
-                                            @Override
-                                            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                                        if (check && !lastMsg.equals(lastSeenMsg)) {
 
-                                                final String key = dataSnapshot.getKey();
-                                                assert key != null;
+                                            messageData.child("start").orderByKey().startAt(lastSeenMsg).addChildEventListener(new ChildEventListener() {
+                                                @Override
+                                                public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                                                    final String key = dataSnapshot.getKey();
+                                                    assert key != null;
 
 
-                                                String from = Objects.requireNonNull(dataSnapshot.child("from").getValue()).toString();
+                                                    String from = Objects.requireNonNull(dataSnapshot.child("from").getValue()).toString();
 
-                                                if (check) {
-                                                    currentChatRef.child("lastSeenMsg").setValue(key);
+                                                    if (check) {
+                                                        currentChatRef.child("lastSeenMsg").setValue(key);
+                                                    }
+
+                                                    if (!from.equals(currentUid) && check) {
+
+                                                        messageData.child("start").child(key).child("state").setValue("2");
+
+                                                    }
+
+
                                                 }
 
-                                                if (!from.equals(currentUid) && check) {
-
-                                                    messageData.child("start").child(key).child("state").setValue("2");
+                                                @Override
+                                                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
 
                                                 }
 
+                                                @Override
+                                                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
 
-                                            }
+                                                }
 
-                                            @Override
-                                            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                                                @Override
+                                                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
 
-                                            }
+                                                }
 
-                                            @Override
-                                            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                                                @Override
+                                                public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                                            }
-
-                                            @Override
-                                            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                            }
-
-                                            @Override
-                                            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                            }
-                                        });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
 
