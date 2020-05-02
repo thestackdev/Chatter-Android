@@ -109,6 +109,8 @@ public class ChatsFragment extends Fragment {
             @Override
             protected void onBindViewHolder(@NonNull final ChatsViewHolder chatsViewHolder, final int i, @NonNull final Chat chat) {
 
+                final String key = getRef(i).getKey();
+
                 usersData.child(Objects.requireNonNull(getRef(i).getKey())).addValueEventListener(new ValueEventListener() {
 
                     @Override
@@ -157,8 +159,23 @@ public class ChatsFragment extends Fragment {
                                 lastMsg.addChildEventListener(new ChildEventListener() {
                                     @Override
                                     public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                                        String lastMsg = Objects.requireNonNull(dataSnapshot.child("message").getValue()).toString();
-                                        chatsViewHolder.message.setText(lastMsg);
+                                        chatsViewHolder.message.setText(Objects.requireNonNull(dataSnapshot.child("message").getValue()).toString());
+                                        chatsViewHolder.time.setText(Objects.requireNonNull(dataSnapshot.child("time").getValue()).toString());
+
+                                        String from = Objects.requireNonNull(dataSnapshot.child("from").getValue()).toString();
+
+                                        if(!from.equals(key)) {
+                                            String state = Objects.requireNonNull(dataSnapshot.child("state").getValue()).toString();
+                                            if (state.equals("2")) {
+                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                            } else if (state.equals("1")) {
+                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+                                            } else {
+                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer);
+                                            }
+
+                                        }
+
 
                                     }
 
@@ -205,7 +222,7 @@ public class ChatsFragment extends Fragment {
                             public void onClick(View v) {
 
                                 Intent intent = new Intent(v.getContext(), MessageActivity.class);
-                                intent.putExtra("profile_user_id", getRef(i).getKey());
+                                intent.putExtra("profile_user_id", key );
                                 intent.putExtra("userName", name);
                                 intent.putExtra("thumbnail", thumbnail);
                                 intent.putExtra("image", image);
