@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".FriendRequests">
+    tools:context=".fragments.FriendRequests">
 
     <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"

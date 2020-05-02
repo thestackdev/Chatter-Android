@@ -1,4 +1,4 @@
-package com.firebase.chatter;
+package com.firebase.chatter.helper;
 
 import android.app.Application;
 import android.content.Context;

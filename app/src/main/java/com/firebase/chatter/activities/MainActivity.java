@@ -1,4 +1,4 @@
-package com.firebase.chatter;
+package com.firebase.chatter.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,6 +12,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.viewpager.widget.ViewPager;
 
+import com.firebase.chatter.PageAdapter;
+import com.firebase.chatter.R;
+import com.firebase.chatter.fragments.ChatsFragment;
+import com.firebase.chatter.fragments.FriendRequests;
+import com.firebase.chatter.fragments.FriendsFragment;
+import com.firebase.chatter.fragments.SearchFragment;
+import com.firebase.chatter.fragments.SettingsFragment;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;

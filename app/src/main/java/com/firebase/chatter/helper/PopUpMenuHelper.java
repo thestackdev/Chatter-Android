@@ -1,4 +1,4 @@
-package com.firebase.chatter;
+package com.firebase.chatter.helper;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -11,7 +11,9 @@ import android.view.MenuItem;
 
 import androidx.appcompat.widget.PopupMenu;
 
-class PopUpMenuHelper {
+import com.firebase.chatter.R;
+
+public class PopUpMenuHelper {
 
     private static void insertMenuItemIcon(Context context, MenuItem menuItem) {
         Drawable icon = menuItem.getIcon();
@@ -35,7 +37,7 @@ class PopUpMenuHelper {
         menuItem.setIcon(null);
     }
 
-    static void insertMenuItemIcons(Context context, PopupMenu popupMenu) {
+    public static void insertMenuItemIcons(Context context, PopupMenu popupMenu) {
         Menu menu = popupMenu.getMenu();
         if (hasIcon(menu)) {
             for (int i = 0; i < menu.size(); i++) {

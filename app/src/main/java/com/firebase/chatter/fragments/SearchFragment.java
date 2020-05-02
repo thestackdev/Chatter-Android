@@ -1,4 +1,4 @@
-package com.firebase.chatter;
+package com.firebase.chatter.fragments;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -18,6 +18,10 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.firebase.chatter.R;
+import com.firebase.chatter.activities.FullScreenImageView;
+import com.firebase.chatter.activities.ProfileActivity;
+import com.firebase.chatter.models.Users;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
@@ -39,7 +43,7 @@ public class SearchFragment extends Fragment {
     private RecyclerView recyclerView;
     private DatabaseReference databaseReference;
     private String current_user_id;
-    private FirebaseRecyclerAdapter<Users , SearchFragment.SearchViewHolder> adapter;
+    private FirebaseRecyclerAdapter<Users, SearchFragment.SearchViewHolder> adapter;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -156,7 +160,7 @@ public class SearchFragment extends Fragment {
                                 /*FragmentManager fragmentManager = getFragmentManager();
                                 fragmentManager.beginTransaction().replace(R.id.main_frame , new SettingsFragment()).commit();*/
                             } else {
-                                Intent intent = new Intent(v.getContext(),ProfileActivity.class);
+                                Intent intent = new Intent(v.getContext(), ProfileActivity.class);
                                 intent.putExtra("profile_user_id" , userId);
                                 startActivity(intent);
                             }

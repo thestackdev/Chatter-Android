@@ -1,6 +1,6 @@
-package com.firebase.chatter;
+package com.firebase.chatter.models;
 
-class Users {
+public class Users {
     private String name;
     private String status;
     private String thumbnail;

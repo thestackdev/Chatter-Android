@@ -1,4 +1,4 @@
-package com.firebase.chatter;
+package com.firebase.chatter.fragments;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -15,6 +15,10 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.firebase.chatter.R;
+import com.firebase.chatter.activities.FullScreenImageView;
+import com.firebase.chatter.activities.ProfileActivity;
+import com.firebase.chatter.models.Friends;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
@@ -34,7 +38,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class FriendsFragment extends Fragment {
     private RecyclerView recyclerView;
     private DatabaseReference friendsData , usersData;
-    private FirebaseRecyclerAdapter<Friends , FriendsViewHolder> adapter;
+    private FirebaseRecyclerAdapter<Friends, FriendsViewHolder> adapter;
 
     public FriendsFragment () {
 
@@ -145,7 +149,7 @@ public class FriendsFragment extends Fragment {
                 friendsViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Intent intent = new Intent(v.getContext(),ProfileActivity.class);
+                        Intent intent = new Intent(v.getContext(), ProfileActivity.class);
                         intent.putExtra("profile_user_id",friendUId);
                         startActivity(intent);
                     }

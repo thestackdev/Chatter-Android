@@ -16,20 +16,20 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".FullScreenImageView"/>
+        <activity android:name=".activities.FullScreenImageView"/>
         <activity
-            android:name=".MessageActivity"
-            android:parentActivityName=".MainActivity"
+            android:name=".activities.MessageActivity"
+            android:parentActivityName=".activities.MainActivity"
             android:windowSoftInputMode="adjustResize"/>
         <activity
-            android:name=".ProfileActivity"
-            android:parentActivityName=".MainActivity"/>
+            android:name=".activities.ProfileActivity"
+            android:parentActivityName=".activities.MainActivity"/>
         <activity
             android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
             android:theme="@style/Base.Theme.AppCompat" />
-        <activity android:name=".LoginActivity" android:windowSoftInputMode="adjustResize"/>
-        <activity android:name=".RegisterActivity" android:windowSoftInputMode="adjustResize"/>
-        <activity android:name=".MainActivity">
+        <activity android:name=".activities.LoginActivity" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".activities.RegisterActivity" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

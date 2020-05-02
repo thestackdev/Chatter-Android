@@ -1,4 +1,4 @@
-package com.firebase.chatter;
+package com.firebase.chatter.activities;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -31,6 +31,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.firebase.chatter.R;
+import com.firebase.chatter.helper.GetTimeAgo;
+import com.firebase.chatter.helper.PopUpMenuHelper;
+import com.firebase.chatter.models.Messages;
 import com.firebase.ui.common.ChangeEventType;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;

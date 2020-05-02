@@ -7,7 +7,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:id="@+id/register_layout"
-    tools:context=".RegisterActivity">
+    tools:context=".activities.RegisterActivity">
 
     <include
         android:id="@+id/register_bar"

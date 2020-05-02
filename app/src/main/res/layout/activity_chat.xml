@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="#000"
     android:id="@+id/root"
-    tools:context=".MessageActivity">
+    tools:context=".activities.MessageActivity">
 
     <LinearLayout
         android:id="@+id/message_bar"

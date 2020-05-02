@@ -1,4 +1,4 @@
-package com.firebase.chatter;
+package com.firebase.chatter.models;
 
 public class Messages {
 

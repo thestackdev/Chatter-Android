@@ -1,4 +1,4 @@
-package com.firebase.chatter;
+package com.firebase.chatter.fragments;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDialogFragment;
 
+import com.firebase.chatter.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;

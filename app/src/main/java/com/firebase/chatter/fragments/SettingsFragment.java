@@ -1,4 +1,4 @@
-package com.firebase.chatter;
+package com.firebase.chatter.fragments;
 
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -19,6 +19,9 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
+import com.firebase.chatter.R;
+import com.firebase.chatter.activities.FullScreenImageView;
+import com.firebase.chatter.activities.LoginActivity;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -165,7 +168,7 @@ public class SettingsFragment extends Fragment {
         change_name.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                usernameDialog usernameDialog = new usernameDialog();
+                UserNameDialog usernameDialog = new UserNameDialog();
                 assert getFragmentManager() != null;
                 usernameDialog.show(getFragmentManager(),"Change Name");
             }
@@ -211,7 +214,7 @@ public class SettingsFragment extends Fragment {
                     public void onClick(DialogInterface dialog, int which) {
                         try {
                             FirebaseAuth.getInstance().signOut();
-                            Intent intent = new Intent(getContext(),LoginActivity.class);
+                            Intent intent = new Intent(getContext(), LoginActivity.class);
                             startActivity(intent);
 
                         } catch (Exception e) {

@@ -1,15 +1,17 @@
-package com.firebase.chatter;
-
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+package com.firebase.chatter.activities;
 
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ImageView;
 
-import com.squareup.picasso.Picasso;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+
 import com.bumptech.glide.Glide;
+import com.firebase.chatter.R;
+import com.squareup.picasso.Picasso;
+
 import java.util.Objects;
 
 
