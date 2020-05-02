@@ -314,7 +314,6 @@ public class ProfileActivity extends AppCompatActivity {
 
                                  addChatMap.put("seen", false);
                                  addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
-                                 addChatMap.put("lastSeenMsg", "null");
                                  addChatMap.put("messageNode" , current_uid+profile_user_id);
 
                                  Map chatUserMap = new HashMap();
@@ -324,9 +323,28 @@ public class ProfileActivity extends AppCompatActivity {
                                  rootDatabase.updateChildren(chatUserMap, new DatabaseReference.CompletionListener() {
                                      @Override
                                      public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                                         rootDatabase.child("messages").child(current_uid+profile_user_id).child("lastMsg").setValue("null");
+
+                                         if(databaseError == null) {
+                                             Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
+                                             intent.putExtra("profile_user_id",profile_user_id);
+                                             intent.putExtra("userName",userName);
+                                             intent.putExtra("thumbnail" , userThumbnail);
+                                             intent.putExtra("image" , userImage);
+                                             intent.putExtra("messageNode" , current_uid+profile_user_id);
+                                             //  startActivity(intent);
+                                         }
                                      }
                                  });
+
+                             } else {
+                                 String messageNode = Objects.requireNonNull(dataSnapshot.child(profile_user_id).child("messageNode").getValue()).toString();
+                                 Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
+                                 intent.putExtra("profile_user_id",profile_user_id);
+                                 intent.putExtra("userName",userName);
+                                 intent.putExtra("thumbnail" , userThumbnail);
+                                 intent.putExtra("image" , userImage);
+                                 intent.putExtra("messageNode" , messageNode);
+                                 //  startActivity(intent);
                              }
                          }
 
@@ -336,25 +354,7 @@ public class ProfileActivity extends AppCompatActivity {
                         }
                     });
 
-                    rootDatabase.child("Chat").child(current_uid).child(profile_user_id).child("messageNode")
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                    String messageNode = Objects.requireNonNull(dataSnapshot.getValue()).toString();
-                                    Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
-                                    intent.putExtra("profile_user_id",profile_user_id);
-                                    intent.putExtra("userName",userName);
-                                    intent.putExtra("thumbnail" , userThumbnail);
-                                    intent.putExtra("image" , userImage);
-                                    intent.putExtra("messageNode" , messageNode);
-                                    startActivity(intent);
-                                }
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                }
-                            });
 
 
 

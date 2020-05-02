@@ -5,9 +5,11 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -80,14 +82,16 @@ public class ChatsFragment extends Fragment {
 
         private TextView name , message , time;
         private CircleImageView userImage;
+        private ImageView stamp;
 
         ChatsViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            name = itemView.findViewById(R.id.single_name);
-            message = itemView.findViewById(R.id.single_status);
-            time = itemView.findViewById(R.id.time_user);
-            userImage = itemView.findViewById(R.id.users_single_image);
+            name = itemView.findViewById(R.id.chatsName);
+            message = itemView.findViewById(R.id.chats_message);
+            time = itemView.findViewById(R.id.chatsTime);
+            userImage = itemView.findViewById(R.id.chatsImage);
+            stamp = itemView.findViewById(R.id.chatsStamp);
 
         }
     }
@@ -99,15 +103,13 @@ public class ChatsFragment extends Fragment {
         Query query = chatRef.orderByChild("timeStamp");
 
         FirebaseRecyclerOptions<Chat> firebaseRecyclerOptions = new FirebaseRecyclerOptions.Builder<Chat>()
-                .setQuery(query , Chat.class).build();
+                .setQuery(query, Chat.class).build();
 
         FirebaseRecyclerAdapter<Chat, ChatsViewHolder> adapter = new FirebaseRecyclerAdapter<Chat, ChatsViewHolder>(firebaseRecyclerOptions) {
             @Override
             protected void onBindViewHolder(@NonNull final ChatsViewHolder chatsViewHolder, final int i, @NonNull final Chat chat) {
-                final String chatUid = getRef(i).getKey();
 
-                assert chatUid != null;
-                usersData.child(chatUid).addValueEventListener(new ValueEventListener() {
+                usersData.child(Objects.requireNonNull(getRef(i).getKey())).addValueEventListener(new ValueEventListener() {
 
                     @Override
                     public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
@@ -150,46 +152,65 @@ public class ChatsFragment extends Fragment {
                             }
                         });
 
-                        Query lastMsgQuery = messageData.child(chat.messageNode).child("start").limitToLast(1);
+                        Query lastMsg = messageData.child(chat.messageNode).orderByKey().limitToLast(1);
 
-                        lastMsgQuery.addChildEventListener(new ChildEventListener() {
-                            @Override
-                            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                                lastMsg.addChildEventListener(new ChildEventListener() {
+                                    @Override
+                                    public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                                        String lastMsg = Objects.requireNonNull(dataSnapshot.child("message").getValue()).toString();
+                                        chatsViewHolder.message.setText(lastMsg);
 
-                                String time = Objects.requireNonNull(dataSnapshot.child("time").getValue()).toString();
+                                    }
 
-                                chatsViewHolder.time.setText(time);
+                                    @Override
+                                    public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
 
-                                String message = Objects.requireNonNull(dataSnapshot.child("message").getValue()).toString();
-                                chatsViewHolder.message.setText(message);
+                                    }
 
-                                if (!chat.seen) {
+                                    @Override
+                                    public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
 
-                                    chatsViewHolder.message.setTypeface(null , Typeface.BOLD);
-                                    chatsViewHolder.message.setTextColor(Color.WHITE);
-                                    chatsViewHolder.message.setTextSize(25);
+                                    }
 
+                                    @Override
+                                    public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                    }
+                                });
+
+                                if(chat.seen) {
+
+                                    messageData.child(chat.messageNode).orderByChild("state").equalTo("1")
+                                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                            Log.i("TAG", "onDataChange: "+dataSnapshot.getChildrenCount());
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                        }
+                                    });
                                 }
 
-                            }
 
+                        chatsViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                             @Override
-                            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                            public void onClick(View v) {
 
-                            }
-
-                            @Override
-                            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-                            }
-
-                            @Override
-                            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError databaseError) {
+                                Intent intent = new Intent(v.getContext(), MessageActivity.class);
+                                intent.putExtra("profile_user_id", getRef(i).getKey());
+                                intent.putExtra("userName", name);
+                                intent.putExtra("thumbnail", thumbnail);
+                                intent.putExtra("image", image);
+                                intent.putExtra("messageNode", chat.messageNode);
+                                startActivity(intent);
 
                             }
                         });
@@ -200,26 +221,12 @@ public class ChatsFragment extends Fragment {
 
                     }
                 });
-
-                chatsViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Intent intent = new Intent(v.getContext(), MessageActivity.class);
-                        intent.putExtra("profile_user_id", chatUid);
-                        intent.putExtra("userName", name);
-                        intent.putExtra("thumbnail", thumbnail);
-                        intent.putExtra("image" , image);
-                        intent.putExtra("messageNode" , chat.messageNode);
-                        startActivity(intent);
-                    }
-                });
-
             }
 
             @NonNull
             @Override
             public ChatsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.users_single_layout, parent, false);
+                View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.chats_layout, parent, false);
                 return new ChatsViewHolder(view);
             }
         };

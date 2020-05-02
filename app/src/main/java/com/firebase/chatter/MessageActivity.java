@@ -1,9 +1,6 @@
 package com.firebase.chatter;
 
-import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
@@ -29,9 +26,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.firebase.ui.common.ChangeEventType;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -54,10 +49,6 @@ import hani.momanii.supernova_emoji_library.Helper.EmojiconEditText;
 
 public class MessageActivity extends AppCompatActivity {
 
-    private String lastMsg;
-
-    private boolean check = true;
-
     private DatabaseReference messageData;
 
     private String messageNode;
@@ -74,7 +65,7 @@ public class MessageActivity extends AppCompatActivity {
     private DatabaseReference currentChatRef;
     private DatabaseReference userChatRef;
 
-    private String currentUid, chatUserId, currentTime, push_id;
+    private String currentUid, chatUserId;
     private SwipeRefreshLayout swipeRefreshLayout;
     FirebaseRecyclerAdapter<Messages, MessageViewHolder> messageAdapter;
     private FirebaseRecyclerOptions<Messages> messagesFirebaseRecyclerOptions;
@@ -89,15 +80,12 @@ public class MessageActivity extends AppCompatActivity {
         setUpUiViews();
         setUpReferences();
         setUpChatUser();
-        setUpChatPage();
-
 
         back_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 onBackPressed();
-                check = false;
 
             }
         });
@@ -149,127 +137,43 @@ public class MessageActivity extends AppCompatActivity {
 
     private void sendMessage() {
         final String message = messageInput.getText().toString();
+
         if (!TextUtils.isEmpty(message)) {
 
-                    final String messageRef = "messages/" + messageNode + "/" + "start";
+            SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa");
 
-                    DatabaseReference user_message_push = rootDatabase.child("messages").child(messageRef).push();
+            final String messageRef = "messages/" + messageNode;
 
-                    push_id = user_message_push.getKey();
+            final String key = messageData.push().getKey();
 
-                    final Map<String, String> ourMessageMap = new HashMap<>();
+            final Map<String, String> ourMessageMap = new HashMap<>();
 
-                    ourMessageMap.put("message", message);
-                    ourMessageMap.put("type", "text");
-                    ourMessageMap.put("time", currentTime);
-                    ourMessageMap.put("from", currentUid);
-                    ourMessageMap.put("state", "0");
+            ourMessageMap.put("message", message);
+            ourMessageMap.put("type", "text");
+            ourMessageMap.put("time", dateFormat.format(new Date()));
+            ourMessageMap.put("from", currentUid);
+            ourMessageMap.put("state", "0");
 
-                    Map<String, Object> messageMap = new HashMap<>();
-                    messageMap.put(messageRef + "/" + push_id, ourMessageMap);
+            Map<String, Object> messageMap = new HashMap<>();
+            messageMap.put(messageRef + "/" + key, ourMessageMap);
 
-                    messageInput.setText("");
+            messageInput.setText("");
 
-                    currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
-
-                    userChatRef.child("seen").setValue(false);
-                    userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
-
-
-                    rootDatabase.updateChildren(messageMap , new DatabaseReference.CompletionListener() {
-                        @Override
-                        public void onComplete(@Nullable final DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                            if (databaseError == null) {
-
-                                /////////////////////////////////////////////////////////////////////
-
-                                userChatRef.child("lastSeenMsg").addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                        String uid = Objects.requireNonNull(dataSnapshot.getValue()).toString();
-
-                                        if (uid.equals("null")) {
-
-                                            userChatRef.child("lastSeenMsg").setValue(push_id);
-                                            currentChatRef.child("lastSeenMsg").setValue(push_id);
-
-                                                }
-                                            }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                    }
-                                });
-
-                                ////////////////////////////////////////////////////////////////////////////////////////
-
-                                messageData.addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                        lastMsg = Objects.requireNonNull(dataSnapshot.child("lastMsg").getValue()).toString();
-
-                                        if (!lastMsg.equals("null")) {
-
-                                            messageData.child("start").orderByKey().startAt(lastMsg).addChildEventListener(new ChildEventListener() {
-                                                @Override
-                                                public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                                                    String uid = dataSnapshot.getKey();
-                                                    if (isConnected()) {
-
-                                                        assert uid != null;
-                                                        if (!uid.equals(lastMsg))
-                                                            messageData.child("start").child(uid).child("state").setValue("1");
-                                                    }
-
-                                                }
-
-                                                @Override
-                                                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                                }
-
-                                                @Override
-                                                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-                                                }
-
-                                                @Override
-                                                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                                }
-
-                                                @Override
-                                                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                                }
-                                            });
-
-                                        } else {
-                                            if (isConnected())
-                                                messageData.child("start").child(push_id).child("state").setValue("1");
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                    }
-                                });
-
-                                messageData.child("lastMsg").setValue(push_id);
-
-                            }
-                        }
-                    });
-
+            rootDatabase.updateChildren(messageMap , new DatabaseReference.CompletionListener() {
+                @Override
+                public void onComplete(@Nullable final DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+                    if (databaseError == null) {
+                        currentChatRef.child("seen").setValue(false);
+                        currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                    }
+                }
+            });
         }
     }
 
     @Override
     protected void onResume() {
+
         super.onResume();
 
         setFirebaseAdapter(presentIndex);
@@ -323,10 +227,6 @@ public class MessageActivity extends AppCompatActivity {
         layoutManager.setSmoothScrollbarEnabled(true);
 
         messageRecyclerView.setLayoutManager(layoutManager);
-
-        Date date = new Date();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa");
-        currentTime = dateFormat.format(date);
 
     }
 
@@ -417,32 +317,13 @@ public class MessageActivity extends AppCompatActivity {
         });
     }
 
-    private void setUpChatPage() {
-
-        currentChatRef.child("seen").setValue(true).addOnSuccessListener(new OnSuccessListener<Void>() {
-            @Override
-            public void onSuccess(Void aVoid) {
-
-            }
-        });
-    }
-
-    public boolean isConnected() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-        assert connectivityManager != null;
-        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-        if (networkInfo != null) {
-            return true;
-        } else return false;
-    }
-
 
     private void setFirebaseAdapter(final int presentIndex) {
 
         // Firebase Content
 
                 messagesFirebaseRecyclerOptions = new FirebaseRecyclerOptions.Builder<Messages>()
-                        .setQuery(messageData.child("start").limitToLast(presentIndex), Messages.class).build();
+                        .setQuery(messageData.limitToLast(presentIndex), Messages.class).build();
 
 
                 messageAdapter = new FirebaseRecyclerAdapter<Messages, MessageViewHolder>(messagesFirebaseRecyclerOptions) {
@@ -458,14 +339,15 @@ public class MessageActivity extends AppCompatActivity {
                     @Override
                     protected void onBindViewHolder(@NonNull MessageViewHolder messageViewHolder, int i, @NonNull Messages messages) {
 
+                        String state = messages.getState();
+
                         if (messages.getFrom().equals(currentUid)) {
+
                             messageViewHolder.messageLayout.setGravity(Gravity.RIGHT);
                             messageViewHolder.message.setText(messages.getMessage());
                             messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_right);
                             messageViewHolder.stamp.setVisibility(View.VISIBLE);
                             messageViewHolder.message_time.setText(messages.getTime());
-
-                            String state = messages.getState();
 
                             if (state.equals("2")) {
                                 messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
@@ -476,6 +358,11 @@ public class MessageActivity extends AppCompatActivity {
                             }
 
                         } else if (messages.getFrom().equals(chatUserId)) {
+
+                            if(!state.equals("2")) {
+                                messageData.child(Objects.requireNonNull(getRef(i).getKey())).child("state").setValue("2");
+                            }
+
                             messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
                             messageViewHolder.stamp.setVisibility(View.GONE);
                             messageViewHolder.messageLayout.setGravity(Gravity.LEFT);
@@ -486,19 +373,17 @@ public class MessageActivity extends AppCompatActivity {
 
                     }
 
-
-                    @Override
-                    public int getItemCount() {
-
-
-                        return super.getItemCount();
-                    }
-
                     @Override
                     public void onChildChanged(@NonNull ChangeEventType type, @NonNull DataSnapshot snapshot, int newIndex, int oldIndex) {
                         super.onChildChanged(type, snapshot, newIndex, oldIndex);
+
+                        userChatRef.child("seen").setValue(true);
+                        userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+
                         messageRecyclerView.smoothScrollToPosition(newIndex);
+
                     }
+
                 };
 
                 messageRecyclerView.setAdapter(messageAdapter);
@@ -531,114 +416,11 @@ public class MessageActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-
-                while (check) {
-
-                    try {
-
-                        Thread.sleep(500);
-
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    currentChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                            final String lastSeenMsg = Objects.requireNonNull(dataSnapshot.child("lastSeenMsg").getValue()).toString();
-
-                            messageData.child("lastMsg").addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                    String lastMsg = dataSnapshot.getValue(String.class);
-
-                                    if (lastMsg != null && !lastMsg.isEmpty()){
-
-                                        if (check && !lastMsg.equals(lastSeenMsg)) {
-
-                                            messageData.child("start").orderByKey().startAt(lastSeenMsg).addChildEventListener(new ChildEventListener() {
-                                                @Override
-                                                public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                                    final String key = dataSnapshot.getKey();
-                                                    assert key != null;
-
-
-                                                    String from = Objects.requireNonNull(dataSnapshot.child("from").getValue()).toString();
-
-                                                    if (check) {
-                                                        currentChatRef.child("lastSeenMsg").setValue(key);
-                                                    }
-
-                                                    if (!from.equals(currentUid) && check) {
-
-                                                        messageData.child("start").child(key).child("state").setValue("2");
-
-                                                    }
-
-
-                                                }
-
-                                                @Override
-                                                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                                }
-
-                                                @Override
-                                                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-                                                }
-
-                                                @Override
-                                                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                                }
-
-                                                @Override
-                                                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                                }
-                                            });
-                                        }
-                                    }
-                                }
-
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                }
-                            });
-
-
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                        }
-                    });
-                }
-
-            }
-
-        });
-        thread.start();
-
-
     }
 
     @Override
     protected void onStop() {
-
-        check = false;
-
         super.onStop();
-
 
     }
 }
