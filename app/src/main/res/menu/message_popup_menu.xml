@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/copy_menu"
+        android:title="@string/copy"
+        android:icon="@drawable/ic_content_copy"/>
+
+    <item android:id="@+id/forward_menu"
+        android:title="@string/forward"
+        android:icon="@drawable/ic_forward"/>
+
+    <item android:id="@+id/delete_for_me_menu"
+        android:title="@string/delete"
+        android:icon="@drawable/ic_delete"/>
+
+    <item android:id="@+id/delete_for_all_menu"
+        android:title="@string/delete_for_everyone"
+        android:icon="@drawable/ic_delete_forever"/>
+
+    <item android:id="@+id/details_menu"
+        android:title="@string/details"
+        android:icon="@drawable/ic_info_outline_black_24dp"/>
+
+</menu>

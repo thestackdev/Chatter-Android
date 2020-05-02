@@ -1,8 +1,6 @@
 package com.firebase.chatter;
 
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -174,6 +172,8 @@ public class ChatsFragment extends Fragment {
                                                 chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer);
                                             }
 
+                                        }else {
+                                            chatsViewHolder.stamp.setVisibility(View.GONE);
                                         }
 
 

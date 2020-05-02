@@ -1,13 +1,20 @@
 package com.firebase.chatter;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Point;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -19,6 +26,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -317,7 +325,6 @@ public class MessageActivity extends AppCompatActivity {
         });
     }
 
-
     private void setFirebaseAdapter(final int presentIndex) {
 
         // Firebase Content
@@ -328,7 +335,6 @@ public class MessageActivity extends AppCompatActivity {
 
                 messageAdapter = new FirebaseRecyclerAdapter<Messages, MessageViewHolder>(messagesFirebaseRecyclerOptions) {
 
-
                     @NonNull
                     @Override
                     public MessageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -337,13 +343,17 @@ public class MessageActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    protected void onBindViewHolder(@NonNull MessageViewHolder messageViewHolder, int i, @NonNull Messages messages) {
+                    protected void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, int i, @NonNull final Messages messages) {
 
                         String state = messages.getState();
 
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
+                        }
+
                         if (messages.getFrom().equals(currentUid)) {
 
-                            messageViewHolder.messageLayout.setGravity(Gravity.RIGHT);
+                            messageViewHolder.messageLayout.setGravity(Gravity.END);
                             messageViewHolder.message.setText(messages.getMessage());
                             messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_right);
                             messageViewHolder.stamp.setVisibility(View.VISIBLE);
@@ -365,11 +375,60 @@ public class MessageActivity extends AppCompatActivity {
 
                             messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
                             messageViewHolder.stamp.setVisibility(View.GONE);
-                            messageViewHolder.messageLayout.setGravity(Gravity.LEFT);
+                            messageViewHolder.messageLayout.setGravity(Gravity.START);
                             messageViewHolder.message.setText(messages.getMessage());
                             messageViewHolder.message_time.setText(messages.getTime());
 
                         }
+
+                        messageViewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                            @Override
+                            public boolean onLongClick(View v) {
+
+                                PopupMenu popupMenu = new PopupMenu(v.getContext(), messageViewHolder.message);
+                                popupMenu.inflate(R.menu.message_popup_menu);
+                                PopUpMenuHelper.insertMenuItemIcons(messageViewHolder.itemView.getContext(), popupMenu);
+                                popupMenu.show();
+
+                                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                                    @Override
+                                    public boolean onMenuItemClick(MenuItem item) {
+                                        switch (item.getItemId()){
+
+                                            case R.id.copy_menu:
+                                                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                                                ClipData clip = ClipData.newPlainText("chatter_message", messages.getMessage());
+                                                clipboard.setPrimaryClip(clip);
+                                                Toast.makeText(MessageActivity.this, "Text copied to clipboard", Toast.LENGTH_SHORT).show();
+                                                break;
+
+                                            case R.id.forward_menu:
+                                                //TODO
+                                                Toast.makeText(MessageActivity.this, "Forward W.I.P", Toast.LENGTH_SHORT).show();
+                                                break;
+
+                                            case R.id.delete_for_me_menu:
+                                                //TODO
+                                                Toast.makeText(MessageActivity.this, "Delete for Me W.I.P", Toast.LENGTH_SHORT).show();
+                                                break;
+
+                                            case R.id.delete_for_all_menu:
+                                                //TODO
+                                                Toast.makeText(MessageActivity.this, "Delete for Everyone W.I.P", Toast.LENGTH_SHORT).show();
+                                                break;
+
+                                            case R.id.details_menu:
+                                                //TODO
+                                                Toast.makeText(MessageActivity.this, "Details W.I.P", Toast.LENGTH_SHORT).show();
+                                                break;
+                                        }
+                                        return true;
+                                    }
+                                });
+
+                                return true;
+                            }
+                        });
 
                     }
 
@@ -400,7 +459,7 @@ public class MessageActivity extends AppCompatActivity {
         private ImageView stamp;
         private LinearLayout messageLayout, layout_bg;
 
-        MessageViewHolder(@NonNull View itemView) {
+        MessageViewHolder(@NonNull final View itemView) {
             super(itemView);
 
             stamp = itemView.findViewById(R.id.stamp);
@@ -408,13 +467,21 @@ public class MessageActivity extends AppCompatActivity {
             messageLayout = itemView.findViewById(R.id.message_single_layout);
             layout_bg = itemView.findViewById(R.id.layout_bg);
             message_time = itemView.findViewById(R.id.message_time);
-
         }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+
+    }
+
+    public double getMessageMaxWidth() {
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        double s = Double.parseDouble(String.valueOf(size.x)) - (Double.parseDouble(String.valueOf(size.x)) * .50);
+        return s;
 
     }
 
