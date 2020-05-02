@@ -34,5 +34,8 @@
     <string name="delete">Delete</string>
     <string name="details">Details</string>
     <string name="delete_for_everyone">Delete for everyone</string>
+    <string name="change_password">Change Password</string>
+    <string name="e_mail">E-mail</string>
+    <string name="status">Status</string>
 
 </resources>

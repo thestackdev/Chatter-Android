@@ -175,7 +175,7 @@
                         android:layout_height="wrap_content"
                         style="@android:style/TextAppearance.Medium"
                         android:textIsSelectable="true"
-                        android:text="Status"
+                        android:text="@string/status"
                         android:layout_margin="4dp"/>
 
                 </LinearLayout>
@@ -238,7 +238,7 @@
                         android:clickable="true"
                         android:focusable="true"
                         style="@android:style/TextAppearance.Medium"
-                        android:text="E-mail"
+                        android:text="@string/e_mail"
                         android:layout_margin="4dp"/>
 
                 </LinearLayout>
@@ -295,7 +295,7 @@
                         style="@android:style/TextAppearance.Medium"
                         android:clickable="true"
                         android:focusable="true"
-                        android:text="Change Password"
+                        android:text="@string/change_password"
                         android:layout_margin="4dp"/>
 
                 </LinearLayout>
