@@ -48,7 +48,7 @@ public class SettingsFragment extends Fragment {
 
     private TextView user_name, user_status, edit_info, done_editing;
     private CircleImageView user_image;
-    private LinearLayout logout;
+    private LinearLayout logout, accent_picker;
     private ImageView change_name, change_status, change_email, change_password;
     private DatabaseReference userData;
     private Uri imageUri;
@@ -238,6 +238,13 @@ public class SettingsFragment extends Fragment {
             }
         });
 
+        accent_picker.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+
         return view;
     }
 
@@ -350,6 +357,7 @@ public class SettingsFragment extends Fragment {
         mStorageRef = FirebaseStorage.getInstance().getReference();
 
         logout = view.findViewById(R.id.layout_logout);
+        accent_picker = view.findViewById(R.id.layout_accent_picker);
 
     }
 }

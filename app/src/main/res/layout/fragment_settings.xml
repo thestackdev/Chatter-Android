@@ -321,6 +321,52 @@
                 android:background="@android:color/darker_gray"/>
 
             <LinearLayout
+                android:id="@+id/layout_accent_picker"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:animateLayoutChanges="true"
+                android:background="?android:attr/selectableItemBackground"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
+
+                <ImageView
+                    android:layout_width="0dp"
+                    android:layout_weight="0.5"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_color_lens"
+                    android:layout_gravity="center" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="5"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginStart="18dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@android:style/TextAppearance.Medium"
+                        android:text="@string/select_accent_color"
+                        android:layout_margin="4dp"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:layout_marginBottom="4dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="@android:color/darker_gray"/>
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -350,7 +396,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         style="@android:style/TextAppearance.Medium"
-                        android:text="Log out"
+                        android:text="@string/log_out"
                         android:layout_margin="4dp"/>
 
                 </LinearLayout>

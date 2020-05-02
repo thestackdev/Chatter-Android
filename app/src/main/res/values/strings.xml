@@ -26,7 +26,6 @@
     <string name="name">Name</string>
     <string name="name_info">This is not your username or pin. This name will be visible to your friends</string>
     <string name="about">About</string>
-    <string name="e_mail">E-mail</string>
     <string name="edit_info">Edit Info</string>
     <string name="done">Done</string>
     <string name="forward">Forward</string>
@@ -37,5 +36,7 @@
     <string name="change_password">Change Password</string>
     <string name="e_mail">E-mail</string>
     <string name="status">Status</string>
+    <string name="log_out">Log out</string>
+    <string name="select_accent_color">Select Accent Color</string>
 
 </resources>
