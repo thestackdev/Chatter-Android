@@ -11,4 +11,6 @@
     <color name="tab_unchecked">#696868</color>
     <color name="steel_blue">#5784BA</color>
 
+    <color name="message_selected">#808080</color>
+
 </resources>

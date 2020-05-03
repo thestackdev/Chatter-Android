@@ -4,6 +4,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.net.Uri;
 import android.os.Build;
@@ -83,6 +84,12 @@ public class MessageActivity extends AppCompatActivity {
     private FirebaseRecyclerOptions<Messages> messagesFirebaseRecyclerOptions;
     private ImageView camera;
     private ImageView icons;
+    private Map<Integer, View> selectedItems = new HashMap<>();
+
+    private LinearLayout message_selected_bar, message_bar;
+    private TextView msg_selected_count;
+    private ImageView back_btn_msg_selected, msg_selected_reply, msg_selected_fav,
+            msg_selected_details, msg_selected_delete, msg_selected_forward, msg_selected_copy;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +99,13 @@ public class MessageActivity extends AppCompatActivity {
         setUpUiViews();
         setUpReferences();
         setUpChatUser();
+
+        back_btn_msg_selected.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });
 
         back_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -223,7 +237,7 @@ public class MessageActivity extends AppCompatActivity {
         user_name = findViewById(R.id.user_name);
         lastSeen = findViewById(R.id.lastSeen);
         swipeRefreshLayout = findViewById(R.id.swipeToRefresh);
-        ImageView image_pick = findViewById(R.id.image_pick);
+
         camera = findViewById(R.id.camera);
         icons = findViewById(R.id.emoji);
 
@@ -231,6 +245,17 @@ public class MessageActivity extends AppCompatActivity {
         messageInput = findViewById(R.id.message_input);
 
         messageRecyclerView = findViewById(R.id.message_recyclerView);
+
+        message_selected_bar = findViewById(R.id.message_selected_bar);
+        message_bar = findViewById(R.id.message_bar);
+        msg_selected_count = findViewById(R.id.msg_selected_count);
+        back_btn_msg_selected = findViewById(R.id.back_btn_msg_selected);
+        msg_selected_reply = findViewById(R.id.msg_selected_reply);
+        msg_selected_fav = findViewById(R.id.msg_selected_fav);
+        msg_selected_details = findViewById(R.id.msg_selected_details);
+        msg_selected_delete = findViewById(R.id.msg_selected_delete);
+        msg_selected_forward = findViewById(R.id.msg_selected_forward);
+        msg_selected_copy = findViewById(R.id.msg_selected_copy);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
 
@@ -347,7 +372,7 @@ public class MessageActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    protected void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, int i, @NonNull final Messages messages) {
+                    protected void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, final int position, @NonNull final Messages messages) {
 
                         String state = messages.getState();
 
@@ -374,7 +399,7 @@ public class MessageActivity extends AppCompatActivity {
                         } else if (messages.getFrom().equals(chatUserId)) {
 
                             if(!state.equals("2")) {
-                                messageData.child(Objects.requireNonNull(getRef(i).getKey())).child("state").setValue("2");
+                                messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("state").setValue("2");
                             }
 
                             messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
@@ -388,6 +413,36 @@ public class MessageActivity extends AppCompatActivity {
                         messageViewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
                             @Override
                             public boolean onLongClick(View v) {
+
+                                selectedItems.put(position,v);
+                                message_bar.setVisibility(View.INVISIBLE);
+                                message_selected_bar.setVisibility(View.VISIBLE);
+                                checkMsg(messages.getFrom());
+                                selectMsg(v);
+                                return true;
+                            }
+                        });
+
+                        messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+
+                            @Override
+                            public void onClick(View v) {
+
+                                if (selectedItems.size()>0){
+
+                                    if (selectedItems.containsKey(position)){
+                                        selectedItems.remove(position);
+                                        deSelectMsg(v);
+                                        checkMsg(messages.getFrom());
+                                        return;
+                                    }
+
+                                    selectedItems.put(position,v);
+                                    selectMsg(v);
+                                    checkMsg(messages.getFrom());
+                                    return;
+
+                                }
 
                                 PopupMenu popupMenu = new PopupMenu(v.getContext(), messageViewHolder.message);
                                 popupMenu.inflate(R.menu.message_popup_menu);
@@ -429,8 +484,6 @@ public class MessageActivity extends AppCompatActivity {
                                         return true;
                                     }
                                 });
-
-                                return true;
                             }
                         });
 
@@ -474,9 +527,52 @@ public class MessageActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
+    private void selectMsg(View view){
+        view.setBackgroundColor(getResources().getColor(R.color.message_selected));
+        msg_selected_count.setText(String.valueOf(selectedItems.size()));
+    }
+
+    private void deSelectMsg(View view){
+        view.setBackgroundColor(Color.TRANSPARENT);
+        msg_selected_count.setText(String.valueOf(selectedItems.size()));
+
+        if (selectedItems.size()==0){
+            message_bar.setVisibility(View.VISIBLE);
+            message_selected_bar.setVisibility(View.GONE);
+        }
+
+    }
+
+    private void checkMsg(String from){
+
+        if (selectedItems.size()>1){
+            msg_selected_reply.setVisibility(View.GONE);
+            msg_selected_fav.setVisibility(View.VISIBLE);
+            msg_selected_details.setVisibility(View.GONE);
+            msg_selected_delete.setVisibility(View.VISIBLE);
+            msg_selected_copy.setVisibility(View.VISIBLE);
+            msg_selected_forward.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        if (from.equals(currentUid)){
+
+            msg_selected_reply.setVisibility(View.VISIBLE);
+            msg_selected_fav.setVisibility(View.VISIBLE);
+            msg_selected_details.setVisibility(View.VISIBLE);
+            msg_selected_delete.setVisibility(View.VISIBLE);
+            msg_selected_copy.setVisibility(View.VISIBLE);
+            msg_selected_forward.setVisibility(View.VISIBLE);
+
+        }else {
+
+            msg_selected_reply.setVisibility(View.VISIBLE);
+            msg_selected_fav.setVisibility(View.GONE);
+            msg_selected_details.setVisibility(View.GONE);
+            msg_selected_delete.setVisibility(View.VISIBLE);
+            msg_selected_copy.setVisibility(View.VISIBLE);
+            msg_selected_forward.setVisibility(View.VISIBLE);
+        }
 
     }
 
@@ -486,13 +582,25 @@ public class MessageActivity extends AppCompatActivity {
         display.getSize(size);
         double s = Double.parseDouble(String.valueOf(size.x)) - (Double.parseDouble(String.valueOf(size.x)) * .50);
         return s;
-
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
+    public void onBackPressed() {
+        if (selectedItems.size()>0){
 
+            for (int key : selectedItems.keySet()){
+                View view = selectedItems.get(key);
+                deSelectMsg(view);
+            }
+
+            selectedItems.clear();
+            message_bar.setVisibility(View.VISIBLE);
+            message_selected_bar.setVisibility(View.GONE);
+
+            return;
+        }
+        super.onBackPressed();
     }
+
 }
 

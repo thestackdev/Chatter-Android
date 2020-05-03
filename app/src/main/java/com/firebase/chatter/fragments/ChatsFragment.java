@@ -1,6 +1,7 @@
 package com.firebase.chatter.fragments;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -8,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,10 +37,11 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-
 
 public class ChatsFragment extends Fragment {
 
@@ -47,35 +50,54 @@ public class ChatsFragment extends Fragment {
     private DatabaseReference messageData;
     private DatabaseReference chatRef;
 
-    public ChatsFragment() {
-
-    }
+    private LinearLayout chat_bar_layout;
+    private TextView chat_selected_count;
+    private ImageView back_btn_chat_selected, chat_selected_delete, chat_selected_info,
+            chat_selected_block, select_all_chat, chat_selected_readAll;
+    private Map<Integer, View> selectedItems = new HashMap<>();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_chats, container, false);
 
-        recyclerView = view.findViewById(R.id.chat_frg_recyclerView);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(view.getContext());
-
-        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        layoutManager.setReverseLayout(true);
-        layoutManager.setSmoothScrollbarEnabled(true);
-
-        recyclerView.setLayoutManager(layoutManager);
+        initUI(view);
 
         DatabaseReference rootData = FirebaseDatabase.getInstance().getReference();
         String current_Uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
 
         messageData = rootData.child("messages");
-
         usersData = rootData.child("Users");
-
         chatRef = rootData.child("Chat").child(current_Uid);
+
+        back_btn_chat_selected.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearSelected();
+            }
+        });
 
         return view;
     }
 
+    private void initUI(View view) {
+
+        chat_bar_layout = view.findViewById(R.id.chat_bar_layout);
+        chat_selected_count = view.findViewById(R.id.chat_selected_count);
+        back_btn_chat_selected = view.findViewById(R.id.back_btn_chat_selected);
+        chat_selected_delete = view.findViewById(R.id.chat_selected_delete);
+        chat_selected_info = view.findViewById(R.id.chat_selected_info);
+        chat_selected_block = view.findViewById(R.id.chat_selected_block);
+        select_all_chat = view.findViewById(R.id.select_all_chat);
+        chat_selected_readAll = view.findViewById(R.id.chat_selected_readAll);
+
+        recyclerView = view.findViewById(R.id.chat_frg_recyclerView);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(view.getContext());
+        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        layoutManager.setReverseLayout(true);
+        layoutManager.setSmoothScrollbarEnabled(true);
+        recyclerView.setLayoutManager(layoutManager);
+
+    }
 
     public static class ChatsViewHolder extends RecyclerView.ViewHolder {
 
@@ -223,6 +245,20 @@ public class ChatsFragment extends Fragment {
                             @Override
                             public void onClick(View v) {
 
+                                if (selectedItems.size()>0){
+
+                                    if (selectedItems.containsKey(i)){
+                                        selectedItems.remove(i);
+                                        deSelectMsg(v);
+                                        return;
+                                    }
+
+                                    selectedItems.put(i,v);
+                                    selectMsg(v);
+                                    return;
+
+                                }
+
                                 Intent intent = new Intent(v.getContext(), MessageActivity.class);
                                 intent.putExtra("profile_user_id", key );
                                 intent.putExtra("userName", name);
@@ -231,6 +267,15 @@ public class ChatsFragment extends Fragment {
                                 intent.putExtra("messageNode", chat.messageNode);
                                 startActivity(intent);
 
+                            }
+                        });
+
+                        chatsViewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                            @Override
+                            public boolean onLongClick(View v) {
+                                selectedItems.put(i,v);
+                                selectMsg(v);
+                                return true;
                             }
                         });
                     }
@@ -253,4 +298,54 @@ public class ChatsFragment extends Fragment {
         recyclerView.setAdapter(adapter);
         adapter.startListening();
     }
+
+    private void selectMsg(View view){
+
+        if (selectedItems.size()>0){
+            chat_bar_layout.setVisibility(View.VISIBLE);
+        }
+
+        if (selectedItems.size()>1){
+            chat_selected_block.setVisibility(View.GONE);
+            chat_selected_readAll.setVisibility(View.GONE);
+        }
+
+        view.setBackgroundColor(getResources().getColor(R.color.message_selected));
+        chat_selected_count.setText(String.valueOf(selectedItems.size()));
+    }
+
+    private void deSelectMsg(View view){
+        view.setBackgroundColor(Color.TRANSPARENT);
+        chat_selected_count.setText(String.valueOf(selectedItems.size()));
+
+        if (selectedItems.size()==0){
+            chat_bar_layout.setVisibility(View.GONE);
+        }
+
+        if (selectedItems.size()>1){
+            chat_selected_block.setVisibility(View.GONE);
+            chat_selected_readAll.setVisibility(View.GONE);
+        }else {
+            chat_selected_block.setVisibility(View.VISIBLE);
+            chat_selected_readAll.setVisibility(View.VISIBLE);
+        }
+
+    }
+
+    private void clearSelected(){
+
+        if (selectedItems.size()!=0){
+
+            for (int key : selectedItems.keySet()){
+                View view = selectedItems.get(key);
+                deSelectMsg(view);
+            }
+
+            selectedItems.clear();
+            chat_bar_layout.setVisibility(View.GONE);
+
+        }
+
+    }
+
 }

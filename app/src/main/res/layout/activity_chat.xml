@@ -5,7 +5,8 @@
     android:layout_height="match_parent"
     android:background="#000"
     android:id="@+id/root"
-    tools:context=".activities.MessageActivity">
+    tools:context=".activities.MessageActivity"
+    android:animateLayoutChanges="true">
 
     <LinearLayout
         android:id="@+id/message_bar"
@@ -64,6 +65,100 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/message_selected_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/colorPrimary"
+        android:visibility="gone"
+        android:animateLayoutChanges="true"
+        android:padding="9dp">
+
+        <ImageView
+            android:id="@+id/back_btn_msg_selected"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_arrow_back_black_24dp"
+            android:padding="6dp"
+            android:tint="@color/white"/>
+
+        <TextView
+            android:id="@+id/msg_selected_count"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            style="@android:style/TextAppearance.Medium"
+            android:text="10"
+            android:gravity="center"
+            android:textColor="@color/white"/>
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_weight="0.5"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_reply"
+            android:padding="6dp"
+            android:tint="@color/white"
+            android:visibility="invisible"/>
+
+        <ImageView
+            android:id="@+id/msg_selected_reply"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_reply"
+            android:padding="6dp"
+            android:tint="@color/white"/>
+
+        <ImageView
+            android:id="@+id/msg_selected_fav"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_star"
+            android:padding="6dp"
+            android:tint="@color/white"/>
+
+        <ImageView
+            android:id="@+id/msg_selected_details"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_info_outline_black_24dp"
+            android:padding="6dp"
+            android:tint="@color/white"/>
+
+        <ImageView
+            android:id="@+id/msg_selected_delete"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_delete"
+            android:padding="6dp"
+            android:tint="@color/white"/>
+
+        <ImageView
+            android:id="@+id/msg_selected_copy"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_content_copy"
+            android:padding="6dp"
+            android:tint="@color/white"/>
+
+        <ImageView
+            android:id="@+id/msg_selected_forward"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_forward"
+            android:padding="6dp"
+            android:tint="@color/white"/>
+
+    </LinearLayout>
+
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:layout_below="@+id/message_bar"
         android:layout_above="@+id/linearLayout"
@@ -119,7 +214,7 @@
                 android:layout_height="wrap_content"
                 android:ems="14"
                 android:imeOptions="actionSend|flagNoEnterAction"
-                android:hint="Enter Message..."
+                android:hint="@string/enter_message"
                 android:textColor="?android:attr/textColorPrimary"
                 android:background="@android:color/transparent"
                 android:inputType="textCapSentences|textMultiLine|textShortMessage"
@@ -129,7 +224,10 @@
                 android:minLines="1"
                 android:scrollbars="vertical"
                 android:padding="10dp"
-                android:layout_margin="4dp"/>
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"/>
 
             <ImageView
                 android:id="@+id/image_pick"
@@ -156,73 +254,6 @@
                 android:layout_marginBottom="4dp"/>
 
         </LinearLayout>
-
-        <!--<RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_toStartOf="@+id/send_message"
-            android:background="@drawable/message_background">
-
-            <ImageView
-                android:id="@+id/emoji"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_alignParentStart="true"
-                android:src="@drawable/ic_insert_emoticon_black_24dp"
-                android:tint="?android:attr/textColorPrimary"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="4dp"/>
-
-            <EditText
-                android:id="@+id/message_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ems="14"
-                android:hint="Enter Message..."
-                android:textColor="?android:attr/textColorPrimary"
-                android:background="@android:color/transparent"
-                android:layout_toStartOf="@+id/image_pick"
-                android:layout_toEndOf="@+id/emoji"
-                android:inputType="textMultiLine"
-                android:textColorHint="?android:attr/colorPrimaryDark"
-                android:maxLines="10"
-                android:lines="6"
-                android:minLines="1"
-                android:scrollbars="vertical"
-                android:padding="10dp"
-                android:layout_margin="4dp"/>
-
-            <ImageView
-                android:id="@+id/image_pick"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toStartOf="@+id/camera"
-                android:src="@drawable/ic_attach_file_black_24dp"
-                android:tint="?android:attr/textColorPrimary"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="4dp"/>
-
-            <ImageView
-                android:id="@+id/camera"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_alignParentEnd="true"
-                android:src="@drawable/ic_photo_camera_black_24dp"
-                android:tint="?android:attr/textColorPrimary"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="4dp"/>
-
-        </RelativeLayout> -->
 
         <ImageView
             android:id="@+id/send_message"

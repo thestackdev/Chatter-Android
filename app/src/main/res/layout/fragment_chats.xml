@@ -1,15 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragments.ChatsFragment">
+    tools:context=".fragments.ChatsFragment"
+    android:animateLayoutChanges="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/chat_bar_layout"
+        android:layout_width="match_parent"
+        android:layout_height="?actionBarSize"
+        android:orientation="horizontal"
+        android:padding="6dp"
+        android:visibility="gone"
+        android:layout_marginBottom="2dp"
+        android:animateLayoutChanges="true"
+        android:background="@color/colorPrimary">
+
+        <ImageView
+            android:id="@+id/back_btn_chat_selected"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_arrow_back_black_24dp"
+            android:padding="6dp"
+            android:tint="@color/white"/>
+
+        <TextView
+            android:id="@+id/chat_selected_count"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            style="@android:style/TextAppearance.Medium"
+            android:text="10"
+            android:gravity="center"
+            android:textColor="@color/white"/>
+
+        <ImageView
+            android:id="@+id/chat_selected_delete"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_delete"
+            android:scaleType="fitCenter"
+            android:tint="@color/white"
+            android:padding="9dp"/>
+
+        <ImageView
+            android:id="@+id/chat_selected_info"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_info_outline_black_24dp"
+            android:scaleType="fitCenter"
+            android:tint="@color/white"
+            android:padding="9dp"/>
+
+        <ImageView
+            android:id="@+id/chat_selected_readAll"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_done_all"
+            android:scaleType="fitCenter"
+            android:tint="@color/white"
+            android:padding="9dp"/>
+
+        <ImageView
+            android:id="@+id/chat_selected_block"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_block"
+            android:scaleType="fitCenter"
+            android:tint="@color/white"
+            android:padding="9dp"/>
+
+        <ImageView
+            android:id="@+id/select_all_chat"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_check_box"
+            android:scaleType="fitCenter"
+            android:tint="@color/white"
+            android:padding="9dp"/>
+
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/chat_frg_recyclerView">
+        android:id="@+id/chat_frg_recyclerView"
+        android:padding="6dp">
 
     </androidx.recyclerview.widget.RecyclerView>
 
-</FrameLayout>
+</LinearLayout>
