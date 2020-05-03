@@ -171,7 +171,7 @@ public class ChatsFragment extends Fragment {
                                             } else if (state.equals("1")) {
                                                 chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
                                             } else {
-                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer);
+                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
                                             }
 
                                         }else {

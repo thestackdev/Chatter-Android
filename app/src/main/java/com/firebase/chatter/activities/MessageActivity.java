@@ -368,7 +368,7 @@ public class MessageActivity extends AppCompatActivity {
                             } else if (state.equals("1")) {
                                 messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
                             } else {
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.timer);
+                                messageViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
                             }
 
                         } else if (messages.getFrom().equals(chatUserId)) {
