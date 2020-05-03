@@ -46,9 +46,6 @@ public class ChatsFragment extends Fragment {
     private DatabaseReference usersData;
     private DatabaseReference messageData;
     private DatabaseReference chatRef;
-    private String name;
-    private String thumbnail;
-    private String image;
 
     public ChatsFragment() {
 
@@ -118,8 +115,8 @@ public class ChatsFragment extends Fragment {
                     @Override
                     public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
 
-                        name = Objects.requireNonNull(dataSnapshot.child("name").getValue()).toString();
-                        thumbnail = Objects.requireNonNull(dataSnapshot.child("thumbnail").getValue()).toString();
+                        final String name = Objects.requireNonNull(dataSnapshot.child("name").getValue()).toString();
+                        final String thumbnail = Objects.requireNonNull(dataSnapshot.child("thumbnail").getValue()).toString();
 
                         chatsViewHolder.name.setText(name);
 
@@ -138,12 +135,13 @@ public class ChatsFragment extends Fragment {
                             });
                         }
 
+                        final String image = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
+
                         chatsViewHolder.userImage.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
                                 if (!thumbnail.equals("default")) {
 
-                                    image = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
                                     Uri imageUri = Uri.parse(image);
                                     Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
                                     intent.setData(imageUri);

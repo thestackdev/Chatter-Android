@@ -43,7 +43,7 @@ public class FriendRequests extends Fragment {
     private FirebaseRecyclerAdapter<Friend_req, RequestsViewHolder> requestsAdapter;
 
 
-    FriendRequests() {
+    public FriendRequests() {
     }
 
     @Override
