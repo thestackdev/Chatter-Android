@@ -4,6 +4,8 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,11 +19,13 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 
 import com.firebase.chatter.R;
 import com.firebase.chatter.activities.FullScreenImageView;
 import com.firebase.chatter.activities.LoginActivity;
+import com.firebase.chatter.helper.AppAccents;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -33,6 +37,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.skydoves.colorpickerview.ColorEnvelope;
+import com.skydoves.colorpickerview.ColorPickerDialog;
+import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
@@ -64,6 +71,7 @@ public class SettingsFragment extends Fragment {
     private String thumbUrl, imageUrl;
     private String current_uid;
     private View view;
+    private AppAccents appAccents;
 
     public SettingsFragment() {
         // Required empty public constructor
@@ -245,10 +253,132 @@ public class SettingsFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
+                selectAccent();
             }
         });
 
         return view;
+    }
+
+    private void selectAccent() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(R.string.select_accent_color);
+
+        View view = LayoutInflater.from(getActivity()).inflate(R.layout.accent_picker_dialog,null);
+        builder.setView(view);
+
+        LinearLayout app_accent_layout = view.findViewById(R.id.app_accent_layout);
+        LinearLayout text_color_layout = view.findViewById(R.id.text_color_layout);
+        LinearLayout title_text_color_layout = view.findViewById(R.id.title_text_color_layout);
+
+        final TextView app_accent_color_box = view.findViewById(R.id.app_accent_color_box);
+        final TextView text_color_box = view.findViewById(R.id.text_color_box);
+        final TextView title_text_color_box = view.findViewById(R.id.title_text_color_box);
+
+        app_accent_color_box.setBackground(setAccentColorDlg());
+        text_color_box.setBackground(setTextColorDlg());
+        title_text_color_box.setBackground(setTitleTextColorDlg());
+
+        app_accent_layout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                accentDialog(0, app_accent_color_box);
+            }
+        });
+
+        text_color_layout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                accentDialog(1, text_color_box);
+            }
+        });
+
+        title_text_color_layout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                accentDialog(2, title_text_color_box);
+            }
+        });
+
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                getActivity().recreate();
+            }
+        });
+
+        builder.setNeutralButton("Default", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                appAccents.setDefault();
+                dialog.dismiss();
+                getActivity().recreate();
+            }
+        });
+
+        builder.show();
+
+    }
+
+    private Drawable setTextColorDlg(){
+        Drawable textDrawable = DrawableCompat.wrap(
+                Objects.requireNonNull(getActivity().getDrawable(R.drawable.color_picker_box)));
+        DrawableCompat.setTint(textDrawable,Color.parseColor(appAccents.getTextColor()));
+        return textDrawable;
+    }
+
+    private Drawable setTitleTextColorDlg(){
+        Drawable titleTextDrawable = DrawableCompat.wrap(
+                Objects.requireNonNull(getActivity().getDrawable(R.drawable.color_picker_box)));
+        DrawableCompat.setTint(titleTextDrawable,Color.parseColor(appAccents.getTitleTextColor()));
+        return titleTextDrawable;
+    }
+
+    private Drawable setAccentColorDlg(){
+        Drawable accentDrawable = DrawableCompat.wrap(
+                Objects.requireNonNull(getActivity().getDrawable(R.drawable.color_picker_box)));
+        DrawableCompat.setTint(accentDrawable,Color.parseColor(appAccents.getAccentColor()));
+        return accentDrawable;
+    }
+
+    private void accentDialog(final int type, final TextView color_box){
+
+        new ColorPickerDialog.Builder(getActivity())
+                .setTitle(getString(R.string.select_accent_color))
+                .setPreferenceName("MyColorPickerDialog")
+                .setPositiveButton(getString(R.string.confirm),
+                        new ColorEnvelopeListener() {
+                            @Override
+                            public void onColorSelected(ColorEnvelope envelope, boolean fromUser) {
+
+                                if (type==0){
+                                    appAccents.setAccentColor("#"+envelope.getHexCode());
+                                    color_box.setBackground(setAccentColorDlg());
+                                }
+                                else if (type==1){
+                                    appAccents.setTextColor("#"+envelope.getHexCode());
+                                    color_box.setBackground(setTextColorDlg());
+                                }
+                                else{
+                                    appAccents.setTitleTextColor("#"+envelope.getHexCode());
+                                    color_box.setBackground(setTitleTextColorDlg());
+                                }
+
+                            }
+                        })
+                .setNegativeButton(getString(R.string.cancel),
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                dialogInterface.dismiss();
+                            }
+                        })
+                .attachAlphaSlideBar(true)
+                .attachBrightnessSlideBar(true)
+                .show();
+
     }
 
     private void callGalleryIntent() {
@@ -361,6 +491,9 @@ public class SettingsFragment extends Fragment {
 
         logout = view.findViewById(R.id.layout_logout);
         accent_picker = view.findViewById(R.id.layout_accent_picker);
+
+        appAccents = new AppAccents(getActivity().getApplicationContext());
+        appAccents.init();
 
     }
 }

@@ -55,6 +55,10 @@ dependencies {
     implementation 'com.theartofdev.edmodo:android-image-cropper:2.5.1'
     implementation 'id.zelory:compressor:2.0.0'
 
+    //Emojis Keyboard
     implementation 'com.github.hani-momanii:SuperNova-Emoji:1.1'
+
+    //Color Picker
+    implementation "com.github.skydoves:colorpickerpreference:2.0.0"
 
 }

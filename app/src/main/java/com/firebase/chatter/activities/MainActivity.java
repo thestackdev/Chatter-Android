@@ -1,15 +1,17 @@
 package com.firebase.chatter.activities;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.viewpager.widget.ViewPager;
 
 import com.firebase.chatter.PageAdapter;
@@ -19,7 +21,9 @@ import com.firebase.chatter.fragments.FriendRequests;
 import com.firebase.chatter.fragments.FriendsFragment;
 import com.firebase.chatter.fragments.SearchFragment;
 import com.firebase.chatter.fragments.SettingsFragment;
+import com.firebase.chatter.helper.AppAccents;
 import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -53,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @SuppressLint("ResourceType")
     private void setUpUiViews() {
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseUser = firebaseAuth.getCurrentUser();
@@ -64,11 +69,22 @@ public class MainActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.viewPager);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
+        RelativeLayout root = findViewById(R.id.root);
+        AppBarLayout appBarLayout = findViewById(R.id.appBarLayout);
+
+        AppAccents appAccents = new AppAccents(this);
+        appAccents.init();
+
+        root.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+        appBarLayout.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+        toolbar_title.setTextColor(Color.parseColor(appAccents.getTitleTextColor()));
+        bottomNavigationView.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+
         Window window = this.getWindow();
 
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        window.setStatusBarColor(ContextCompat.getColor(this,R.color.colorPrimary));
+        window.setStatusBarColor(Color.parseColor(appAccents.getAccentColor()));
 
         bottomNavigationView.setOnNavigationItemSelectedListener(
                 new BottomNavigationView.OnNavigationItemSelectedListener() {

@@ -39,5 +39,10 @@
     <string name="log_out">Log out</string>
     <string name="select_accent_color">Select Accent Color</string>
     <string name="enter_message">Enter Message…</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="select_app_accent_color">Select App Accent Color</string>
+    <string name="select_text_color">Select Text Color</string>
+    <string name="select_title_text_color">Select Title Text Color</string>
 
 </resources>

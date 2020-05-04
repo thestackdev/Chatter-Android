@@ -306,6 +306,7 @@ public class ChatsFragment extends Fragment {
         }
 
         if (selectedItems.size()>1){
+            chat_selected_info.setVisibility(View.GONE);
             chat_selected_block.setVisibility(View.GONE);
             chat_selected_readAll.setVisibility(View.GONE);
         }
@@ -323,9 +324,11 @@ public class ChatsFragment extends Fragment {
         }
 
         if (selectedItems.size()>1){
+            chat_selected_info.setVisibility(View.GONE);
             chat_selected_block.setVisibility(View.GONE);
             chat_selected_readAll.setVisibility(View.GONE);
         }else {
+            chat_selected_info.setVisibility(View.VISIBLE);
             chat_selected_block.setVisibility(View.VISIBLE);
             chat_selected_readAll.setVisibility(View.VISIBLE);
         }

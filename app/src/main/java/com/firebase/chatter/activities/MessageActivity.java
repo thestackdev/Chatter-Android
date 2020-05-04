@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,14 +29,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.firebase.chatter.R;
+import com.firebase.chatter.helper.AppAccents;
 import com.firebase.chatter.helper.GetTimeAgo;
 import com.firebase.chatter.helper.PopUpMenuHelper;
 import com.firebase.chatter.models.Messages;
+import com.firebase.chatter.models.SelectedItemsModel;
 import com.firebase.ui.common.ChangeEventType;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
@@ -84,12 +88,13 @@ public class MessageActivity extends AppCompatActivity {
     private FirebaseRecyclerOptions<Messages> messagesFirebaseRecyclerOptions;
     private ImageView camera;
     private ImageView icons;
-    private Map<Integer, View> selectedItems = new HashMap<>();
+    private Map<Integer, SelectedItemsModel> selectedItems = new HashMap<>();
 
     private LinearLayout message_selected_bar, message_bar;
     private TextView msg_selected_count;
     private ImageView back_btn_msg_selected, msg_selected_reply, msg_selected_fav,
             msg_selected_details, msg_selected_delete, msg_selected_forward, msg_selected_copy;
+    private AppAccents appAccents;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -257,6 +262,22 @@ public class MessageActivity extends AppCompatActivity {
         msg_selected_forward = findViewById(R.id.msg_selected_forward);
         msg_selected_copy = findViewById(R.id.msg_selected_copy);
 
+        appAccents = new AppAccents(this);
+        appAccents.init();
+
+        message_bar.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+        back_btn.setColorFilter(Color.parseColor(appAccents.getTextColor()));
+
+        message_selected_bar.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+        back_btn_msg_selected.setColorFilter(Color.parseColor(appAccents.getTextColor()));
+        msg_selected_count.setTextColor(Color.parseColor(appAccents.getTextColor()));
+        msg_selected_reply.setColorFilter(Color.parseColor(appAccents.getTextColor()));
+        msg_selected_fav.setColorFilter(Color.parseColor(appAccents.getTextColor()));
+        msg_selected_details.setColorFilter(Color.parseColor(appAccents.getTextColor()));
+        msg_selected_delete.setColorFilter(Color.parseColor(appAccents.getTextColor()));
+        msg_selected_copy.setColorFilter(Color.parseColor(appAccents.getTextColor()));
+        msg_selected_forward.setColorFilter(Color.parseColor(appAccents.getTextColor()));
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
 
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
@@ -384,7 +405,10 @@ public class MessageActivity extends AppCompatActivity {
 
                             messageViewHolder.messageLayout.setGravity(Gravity.END);
                             messageViewHolder.message.setText(messages.getMessage());
-                            messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_right);
+                            Drawable bg_right = DrawableCompat.wrap(
+                                    Objects.requireNonNull(getDrawable(R.drawable.background_right)));
+                            DrawableCompat.setTint(bg_right,Color.parseColor(appAccents.getAccentColor()));
+                            messageViewHolder.layout_bg.setBackground(bg_right);
                             messageViewHolder.stamp.setVisibility(View.VISIBLE);
                             messageViewHolder.message_time.setText(messages.getTime());
 
@@ -396,7 +420,8 @@ public class MessageActivity extends AppCompatActivity {
                                 messageViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
                             }
 
-                        } else if (messages.getFrom().equals(chatUserId)) {
+                        }
+                        else if (messages.getFrom().equals(chatUserId)) {
 
                             if(!state.equals("2")) {
                                 messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("state").setValue("2");
@@ -410,15 +435,26 @@ public class MessageActivity extends AppCompatActivity {
 
                         }
 
+                        final SelectedItemsModel selectedItemsModel = new SelectedItemsModel(
+                                position,
+                                messageViewHolder.itemView,
+                                currentUid,
+                                messages.getFrom());
+
+                        if (selectedItems.containsKey(position)){
+                            selectMsg(messageViewHolder.itemView);
+                            checkMsg(selectedItemsModel);
+                        }
+
                         messageViewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
                             @Override
                             public boolean onLongClick(View v) {
 
-                                selectedItems.put(position,v);
+                                selectedItems.put(position, selectedItemsModel);
                                 message_bar.setVisibility(View.INVISIBLE);
                                 message_selected_bar.setVisibility(View.VISIBLE);
-                                checkMsg(messages.getFrom());
-                                selectMsg(v);
+                                selectMsg(messageViewHolder.itemView);
+                                checkMsg(selectedItemsModel);
                                 return true;
                             }
                         });
@@ -432,16 +468,20 @@ public class MessageActivity extends AppCompatActivity {
 
                                     if (selectedItems.containsKey(position)){
                                         selectedItems.remove(position);
-                                        deSelectMsg(v);
-                                        checkMsg(messages.getFrom());
+                                        deSelectMsg(messageViewHolder.itemView);
+                                        checkMsg(selectedItemsModel);
                                         return;
                                     }
 
-                                    selectedItems.put(position,v);
-                                    selectMsg(v);
-                                    checkMsg(messages.getFrom());
+                                    selectedItems.put(position,selectedItemsModel);
+                                    selectMsg(messageViewHolder.itemView);
+                                    checkMsg(selectedItemsModel);
                                     return;
 
+                                }
+
+                                if (messages.getState().equals("0")){
+                                    return;
                                 }
 
                                 PopupMenu popupMenu = new PopupMenu(v.getContext(), messageViewHolder.message);
@@ -543,7 +583,7 @@ public class MessageActivity extends AppCompatActivity {
 
     }
 
-    private void checkMsg(String from){
+    private void checkMsg(SelectedItemsModel selectedItemsModel){
 
         if (selectedItems.size()>1){
             msg_selected_reply.setVisibility(View.GONE);
@@ -555,23 +595,27 @@ public class MessageActivity extends AppCompatActivity {
             return;
         }
 
-        if (from.equals(currentUid)){
+        if (selectedItems.size()==1){
+
+            if (selectedItemsModel.getFromUid().equals(selectedItemsModel.getCurrentUid())){
+
+                msg_selected_reply.setVisibility(View.VISIBLE);
+                msg_selected_fav.setVisibility(View.VISIBLE);
+                msg_selected_details.setVisibility(View.VISIBLE);
+                msg_selected_delete.setVisibility(View.VISIBLE);
+                msg_selected_copy.setVisibility(View.VISIBLE);
+                msg_selected_forward.setVisibility(View.VISIBLE);
+                return;
+
+            }
 
             msg_selected_reply.setVisibility(View.VISIBLE);
             msg_selected_fav.setVisibility(View.VISIBLE);
-            msg_selected_details.setVisibility(View.VISIBLE);
-            msg_selected_delete.setVisibility(View.VISIBLE);
-            msg_selected_copy.setVisibility(View.VISIBLE);
-            msg_selected_forward.setVisibility(View.VISIBLE);
-
-        }else {
-
-            msg_selected_reply.setVisibility(View.VISIBLE);
-            msg_selected_fav.setVisibility(View.GONE);
             msg_selected_details.setVisibility(View.GONE);
             msg_selected_delete.setVisibility(View.VISIBLE);
             msg_selected_copy.setVisibility(View.VISIBLE);
             msg_selected_forward.setVisibility(View.VISIBLE);
+
         }
 
     }
@@ -589,7 +633,8 @@ public class MessageActivity extends AppCompatActivity {
         if (selectedItems.size()>0){
 
             for (int key : selectedItems.keySet()){
-                View view = selectedItems.get(key);
+                SelectedItemsModel selectedItemsModel = selectedItems.get(key);
+                View view = selectedItemsModel.getView();
                 deSelectMsg(view);
             }
 
