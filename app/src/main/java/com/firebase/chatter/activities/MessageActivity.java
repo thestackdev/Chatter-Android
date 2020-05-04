@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -51,8 +52,11 @@ import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -65,6 +69,9 @@ public class MessageActivity extends AppCompatActivity {
     private DatabaseReference messageData;
 
     private String messageNode;
+
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa");
+
 
     private ImageView back_btn, btnSend;
     private CircleImageView user_image;
@@ -162,13 +169,12 @@ public class MessageActivity extends AppCompatActivity {
     }
 
     private void sendMessage() {
+
         final String message = messageInput.getText().toString();
 
         if (!TextUtils.isEmpty(message)) {
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa");
-
-            final String messageRef = "messages/" + messageNode;
+            final String messageRef = "messages/" + messageNode + "/Conversation";
 
             final String key = messageData.push().getKey();
 
@@ -176,9 +182,9 @@ public class MessageActivity extends AppCompatActivity {
 
             ourMessageMap.put("message", message);
             ourMessageMap.put("type", "text");
-            ourMessageMap.put("time", dateFormat.format(new Date()));
             ourMessageMap.put("from", currentUid);
             ourMessageMap.put("state", "0");
+            ourMessageMap.put("times" , dateFormat.format(new Date()) + ",null,null");
 
             Map<String, Object> messageMap = new HashMap<>();
             messageMap.put(messageRef + "/" + key, ourMessageMap);
@@ -201,6 +207,8 @@ public class MessageActivity extends AppCompatActivity {
     protected void onResume() {
 
         super.onResume();
+
+        messageData.child(currentUid).setValue(false);
 
         setFirebaseAdapter(presentIndex);
 
@@ -359,7 +367,7 @@ public class MessageActivity extends AppCompatActivity {
         // Firebase Content
 
                 messagesFirebaseRecyclerOptions = new FirebaseRecyclerOptions.Builder<Messages>()
-                        .setQuery(messageData.limitToLast(presentIndex), Messages.class).build();
+                        .setQuery(messageData.child("Conversation").limitToLast(presentIndex) , Messages.class).build();
 
 
                 messageAdapter = new FirebaseRecyclerAdapter<Messages, MessageViewHolder>(messagesFirebaseRecyclerOptions) {
@@ -375,6 +383,9 @@ public class MessageActivity extends AppCompatActivity {
                     protected void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, final int position, @NonNull final Messages messages) {
 
                         String state = messages.getState();
+                        String times = messages.getTimes();
+
+                        String[] split = times.split("," , 2);
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
@@ -386,7 +397,8 @@ public class MessageActivity extends AppCompatActivity {
                             messageViewHolder.message.setText(messages.getMessage());
                             messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_right);
                             messageViewHolder.stamp.setVisibility(View.VISIBLE);
-                            messageViewHolder.message_time.setText(messages.getTime());
+
+                            messageViewHolder.message_time.setText(split[0]);
 
                             if (state.equals("2")) {
                                 messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
@@ -399,6 +411,10 @@ public class MessageActivity extends AppCompatActivity {
                         } else if (messages.getFrom().equals(chatUserId)) {
 
                             if(!state.equals("2")) {
+
+                                messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
+                                        .setValue(split[0] + "null" +","+dateFormat.format(new Date()));
+
                                 messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("state").setValue("2");
                             }
 
@@ -406,7 +422,8 @@ public class MessageActivity extends AppCompatActivity {
                             messageViewHolder.stamp.setVisibility(View.GONE);
                             messageViewHolder.messageLayout.setGravity(Gravity.START);
                             messageViewHolder.message.setText(messages.getMessage());
-                            messageViewHolder.message_time.setText(messages.getTime());
+
+                            messageViewHolder.message_time.setText(split[0]);
 
                         }
 
@@ -457,6 +474,8 @@ public class MessageActivity extends AppCompatActivity {
                                             case R.id.copy_menu:
                                                 ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                                                 ClipData clip = ClipData.newPlainText("chatter_message", messages.getMessage());
+
+                                                assert clipboard != null;
                                                 clipboard.setPrimaryClip(clip);
                                                 Toast.makeText(MessageActivity.this, "Text copied to clipboard", Toast.LENGTH_SHORT).show();
                                                 break;
@@ -472,8 +491,14 @@ public class MessageActivity extends AppCompatActivity {
                                                 break;
 
                                             case R.id.delete_for_all_menu:
-                                                //TODO
-                                                Toast.makeText(MessageActivity.this, "Delete for Everyone W.I.P", Toast.LENGTH_SHORT).show();
+
+                                                getRef(position).removeValue(new DatabaseReference.CompletionListener() {
+                                                    @Override
+                                                    public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+                                                        notifyDataSetChanged();
+                                                    }
+                                                });
+
                                                 break;
 
                                             case R.id.details_menu:
@@ -489,6 +514,7 @@ public class MessageActivity extends AppCompatActivity {
 
                     }
 
+
                     @Override
                     public void onChildChanged(@NonNull ChangeEventType type, @NonNull DataSnapshot snapshot, int newIndex, int oldIndex) {
                         super.onChildChanged(type, snapshot, newIndex, oldIndex);
@@ -496,11 +522,14 @@ public class MessageActivity extends AppCompatActivity {
                         userChatRef.child("seen").setValue(true);
                         userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
 
-                        messageRecyclerView.smoothScrollToPosition(newIndex);
+                        notifyDataSetChanged();
 
+                        if(newIndex > oldIndex) {
+                            messageRecyclerView.smoothScrollToPosition(newIndex);
+                        }
                     }
-
                 };
+
 
                 messageRecyclerView.setAdapter(messageAdapter);
 
@@ -590,6 +619,7 @@ public class MessageActivity extends AppCompatActivity {
 
             for (int key : selectedItems.keySet()){
                 View view = selectedItems.get(key);
+                assert view != null;
                 deSelectMsg(view);
             }
 
@@ -602,5 +632,10 @@ public class MessageActivity extends AppCompatActivity {
         super.onBackPressed();
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        messageData.child(currentUid).setValue(true);
+    }
 }
 

@@ -307,6 +307,9 @@ public class ProfileActivity extends AppCompatActivity {
                              if (!dataSnapshot.hasChild(profile_user_id)) {
                                  Map addChatMap = new HashMap();
 
+                                 rootDatabase.child("messages").child(current_uid+profile_user_id).child(current_uid).setValue(false);
+                                 rootDatabase.child("messages").child(current_uid+profile_user_id).child(profile_user_id).setValue(false);
+
                                  addChatMap.put("seen", false);
                                  addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
                                  addChatMap.put("messageNode" , current_uid+profile_user_id);
@@ -320,13 +323,14 @@ public class ProfileActivity extends AppCompatActivity {
                                      public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
 
                                          if(databaseError == null) {
+
                                              Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
                                              intent.putExtra("profile_user_id",profile_user_id);
                                              intent.putExtra("userName",userName);
                                              intent.putExtra("thumbnail" , userThumbnail);
                                              intent.putExtra("image" , userImage);
                                              intent.putExtra("messageNode" , current_uid+profile_user_id);
-                                             //  startActivity(intent);
+                                             startActivity(intent);
                                          }
                                      }
                                  });
@@ -339,7 +343,7 @@ public class ProfileActivity extends AppCompatActivity {
                                  intent.putExtra("thumbnail" , userThumbnail);
                                  intent.putExtra("image" , userImage);
                                  intent.putExtra("messageNode" , messageNode);
-                                 //  startActivity(intent);
+                                 startActivity(intent);
                              }
                          }
 

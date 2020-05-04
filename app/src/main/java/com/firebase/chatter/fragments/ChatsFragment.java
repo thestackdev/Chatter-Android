@@ -176,13 +176,19 @@ public class ChatsFragment extends Fragment {
                             }
                         });
 
-                        Query lastMsg = messageData.child(chat.messageNode).orderByKey().limitToLast(1);
+                        Query lastMsg = messageData.child(chat.messageNode).child("Conversation").orderByKey().limitToLast(1);
 
                                 lastMsg.addChildEventListener(new ChildEventListener() {
                                     @Override
                                     public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
                                         chatsViewHolder.message.setText(Objects.requireNonNull(dataSnapshot.child("message").getValue()).toString());
-                                        chatsViewHolder.time.setText(Objects.requireNonNull(dataSnapshot.child("time").getValue()).toString());
+
+                                       String times = Objects.requireNonNull(dataSnapshot.child("times").getValue()).toString();
+
+                                       String[] split = times.split("," , 2);
+
+                                       chatsViewHolder.time.setText(split[0]);
 
                                         String from = Objects.requireNonNull(dataSnapshot.child("from").getValue()).toString();
 
