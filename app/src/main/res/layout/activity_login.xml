@@ -78,15 +78,13 @@
                 android:layout_gravity="center|start"
                 style="@style/Widget.MaterialComponents.Button.TextButton"/>
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
+            <ImageView
                 android:id="@+id/btn_login"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:backgroundTint="@color/colorPrimaryDark"
-                android:src="@drawable/ic_check_white"
-                app:tint="@color/white"
-                app:borderWidth="0dp"
-                android:layout_gravity="end|center"/>
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/circle_background_1"
+                android:src="@drawable/ic_tick"
+                android:scaleType="centerInside"/>
 
         </LinearLayout>
 

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
@@ -19,6 +20,8 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -284,6 +287,11 @@ public class MessageActivity extends AppCompatActivity {
         msg_selected_copy.setColorFilter(Color.parseColor(appAccents.getTextColor()));
         msg_selected_forward.setColorFilter(Color.parseColor(appAccents.getTextColor()));
 
+        Window window = this.getWindow();
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(Color.parseColor(appAccents.getAccentColor()));
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
 
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
@@ -423,8 +431,13 @@ public class MessageActivity extends AppCompatActivity {
                             messageViewHolder.message_time.setText(messages.getTimes());
 
                             if(messages.getDelete().equals(currentUid)) {
-                                messageViewHolder.message.setText("Deleted For You");
+                                messageViewHolder.message.setText(R.string.deleted_for_you);
+                                messageViewHolder.message.setTypeface(messageViewHolder.message.getTypeface(),Typeface.ITALIC);
+                                messageViewHolder.message_time.setText(split[0]);
+                                messageViewHolder.stamp.setVisibility(View.GONE);
                             } else {
+
+                                messageViewHolder.message.setTypeface(messageViewHolder.message.getTypeface(),Typeface.NORMAL);
 
                                 messageViewHolder.message.setText(messages.getMessage());
                                 messageViewHolder.stamp.setVisibility(View.VISIBLE);
@@ -474,6 +487,10 @@ public class MessageActivity extends AppCompatActivity {
                             @Override
                             public boolean onLongClick(View v) {
 
+                                if (!messages.getDelete().equals("null")){
+                                    return false;
+                                }
+
                                 selectedItems.put(position, selectedItemsModel);
                                 message_bar.setVisibility(View.INVISIBLE);
                                 message_selected_bar.setVisibility(View.VISIBLE);
@@ -507,6 +524,10 @@ public class MessageActivity extends AppCompatActivity {
                                 }
 
                                 if (messages.getState().equals("0")){
+                                    return;
+                                }
+
+                                if (!messages.getDelete().equals("null")){
                                     return;
                                 }
 

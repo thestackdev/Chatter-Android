@@ -3,9 +3,12 @@ package com.firebase.chatter.activities;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -17,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.firebase.chatter.R;
+import com.firebase.chatter.helper.AppAccents;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputLayout;
@@ -143,5 +147,20 @@ public class RegisterActivity extends AppCompatActivity {
         textView.setText(getString(R.string.register));
         getSupportActionBar().setTitle("");
         progressDialog = new ProgressDialog(this);
+
+        AppAccents appAccents = new AppAccents(this);
+        appAccents.init();
+
+        toolbar.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+        toolbar.setTitleTextColor(Color.parseColor(appAccents.getTextColor()));
+
+        register.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+        register.setTextColor(Color.parseColor(appAccents.getTextColor()));
+
+        Window window = this.getWindow();
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(Color.parseColor(appAccents.getAccentColor()));
+
     }
 }
