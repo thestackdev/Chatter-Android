@@ -45,5 +45,6 @@
     <string name="select_text_color">Select Text Color</string>
     <string name="select_title_text_color">Select Title Text Color</string>
     <string name="deleted_for_you">Deleted For You</string>
+    <string name="online">online</string>
 
 </resources>

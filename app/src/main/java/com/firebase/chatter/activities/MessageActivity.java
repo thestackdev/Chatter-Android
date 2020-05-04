@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -33,6 +34,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -42,6 +44,8 @@ import com.firebase.chatter.R;
 import com.firebase.chatter.helper.AppAccents;
 import com.firebase.chatter.helper.GetTimeAgo;
 import com.firebase.chatter.helper.PopUpMenuHelper;
+import com.firebase.chatter.helper.RecyclerItemTouchHelper;
+import com.firebase.chatter.helper.RecyclerItemTouchHelperListener;
 import com.firebase.chatter.models.Messages;
 import com.firebase.chatter.models.SelectedItemsModel;
 import com.firebase.ui.common.ChangeEventType;
@@ -61,6 +65,7 @@ import com.squareup.picasso.Picasso;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -68,14 +73,13 @@ import de.hdodenhof.circleimageview.CircleImageView;
 import hani.momanii.supernova_emoji_library.Actions.EmojIconActions;
 import hani.momanii.supernova_emoji_library.Helper.EmojiconEditText;
 
-public class MessageActivity extends AppCompatActivity {
+public class MessageActivity extends AppCompatActivity implements RecyclerItemTouchHelperListener {
 
     private DatabaseReference messageData;
 
     private String messageNode;
 
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa");
-
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa", Locale.ENGLISH);
 
     private ImageView back_btn, btnSend;
     private CircleImageView user_image;
@@ -300,6 +304,11 @@ public class MessageActivity extends AppCompatActivity {
 
         messageRecyclerView.setLayoutManager(layoutManager);
 
+        //Swipe To Reply Message
+        ItemTouchHelper.SimpleCallback itemTouchHelperCallback =
+                new RecyclerItemTouchHelper(0, ItemTouchHelper.RIGHT, this);
+        new ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(messageRecyclerView);
+
     }
 
     private void setUpReferences() {
@@ -374,7 +383,7 @@ public class MessageActivity extends AppCompatActivity {
                 String seenTime = Objects.requireNonNull(dataSnapshot.getValue()).toString();
 
                 if (seenTime.equals("true")) {
-                    lastSeen.setText("online");
+                    lastSeen.setText(R.string.online);
                 } else {
                     GetTimeAgo getTimeAgo = new GetTimeAgo();
                     long getTime = Long.parseLong(seenTime);
@@ -623,9 +632,25 @@ public class MessageActivity extends AppCompatActivity {
 
             }
 
-        // Firebase Content Completed
+    @Override
+    public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction, int position) {
 
-    private static class MessageViewHolder extends RecyclerView.ViewHolder {
+        if (viewHolder instanceof MessageViewHolder){
+
+            messageInput.requestFocus();
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(messageInput, InputMethodManager.SHOW_IMPLICIT);
+            }
+            messageAdapter.notifyDataSetChanged();
+
+        }
+
+    }
+
+    // Firebase Content Completed
+
+    public class MessageViewHolder extends RecyclerView.ViewHolder {
 
         private TextView message, message_time;
         private ImageView stamp;
@@ -699,8 +724,7 @@ public class MessageActivity extends AppCompatActivity {
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
-        double s = Double.parseDouble(String.valueOf(size.x)) - (Double.parseDouble(String.valueOf(size.x)) * .50);
-        return s;
+        return Double.parseDouble(String.valueOf(size.x)) - (Double.parseDouble(String.valueOf(size.x)) * .50);
     }
 
     @Override
@@ -709,6 +733,7 @@ public class MessageActivity extends AppCompatActivity {
 
             for (int key : selectedItems.keySet()){
                 SelectedItemsModel selectedItemsModel = selectedItems.get(key);
+                assert selectedItemsModel != null;
                 View view = selectedItemsModel.getView();
 
                 deSelectMsg(view);
