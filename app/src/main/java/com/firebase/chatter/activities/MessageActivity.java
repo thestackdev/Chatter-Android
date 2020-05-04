@@ -34,6 +34,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.firebase.chatter.DetailsActivity;
 import com.firebase.chatter.R;
 import com.firebase.chatter.helper.AppAccents;
 import com.firebase.chatter.helper.GetTimeAgo;
@@ -69,6 +70,9 @@ public class MessageActivity extends AppCompatActivity {
     private DatabaseReference messageData;
 
     private String messageNode;
+
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa");
+
 
     private ImageView back_btn, btnSend;
     private CircleImageView user_image;
@@ -167,13 +171,12 @@ public class MessageActivity extends AppCompatActivity {
     }
 
     private void sendMessage() {
+
         final String message = messageInput.getText().toString();
 
         if (!TextUtils.isEmpty(message)) {
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa");
-
-            final String messageRef = "messages/" + messageNode;
+            final String messageRef = "messages/" + messageNode + "/Conversation";
 
             final String key = messageData.push().getKey();
 
@@ -181,9 +184,10 @@ public class MessageActivity extends AppCompatActivity {
 
             ourMessageMap.put("message", message);
             ourMessageMap.put("type", "text");
-            ourMessageMap.put("time", dateFormat.format(new Date()));
             ourMessageMap.put("from", currentUid);
             ourMessageMap.put("state", "0");
+            ourMessageMap.put("times" , dateFormat.format(new Date()) + ",null,null");
+            ourMessageMap.put("delete" , "null");
 
             Map<String, Object> messageMap = new HashMap<>();
             messageMap.put(messageRef + "/" + key, ourMessageMap);
@@ -206,6 +210,8 @@ public class MessageActivity extends AppCompatActivity {
     protected void onResume() {
 
         super.onResume();
+
+        messageData.child(currentUid).setValue(false);
 
         setFirebaseAdapter(presentIndex);
 
@@ -380,7 +386,7 @@ public class MessageActivity extends AppCompatActivity {
         // Firebase Content
 
                 messagesFirebaseRecyclerOptions = new FirebaseRecyclerOptions.Builder<Messages>()
-                        .setQuery(messageData.limitToLast(presentIndex), Messages.class).build();
+                        .setQuery(messageData.child("Conversation").limitToLast(presentIndex) , Messages.class).build();
 
 
                 messageAdapter = new FirebaseRecyclerAdapter<Messages, MessageViewHolder>(messagesFirebaseRecyclerOptions) {
@@ -396,6 +402,9 @@ public class MessageActivity extends AppCompatActivity {
                     protected void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, final int position, @NonNull final Messages messages) {
 
                         String state = messages.getState();
+                        String times = messages.getTimes();
+
+                        String[] split = times.split("," , 2);
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
@@ -404,26 +413,40 @@ public class MessageActivity extends AppCompatActivity {
                         if (messages.getFrom().equals(currentUid)) {
 
                             messageViewHolder.messageLayout.setGravity(Gravity.END);
+
                             messageViewHolder.message.setText(messages.getMessage());
                             Drawable bg_right = DrawableCompat.wrap(
                                     Objects.requireNonNull(getDrawable(R.drawable.background_right)));
                             DrawableCompat.setTint(bg_right,Color.parseColor(appAccents.getAccentColor()));
                             messageViewHolder.layout_bg.setBackground(bg_right);
                             messageViewHolder.stamp.setVisibility(View.VISIBLE);
-                            messageViewHolder.message_time.setText(messages.getTime());
+                            messageViewHolder.message_time.setText(messages.getTimes());
 
-                            if (state.equals("2")) {
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
-                            } else if (state.equals("1")) {
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+                            if(messages.getDelete().equals(currentUid)) {
+                                messageViewHolder.message.setText("Deleted For You");
                             } else {
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+
+                                messageViewHolder.message.setText(messages.getMessage());
+                                messageViewHolder.stamp.setVisibility(View.VISIBLE);
+
+                                messageViewHolder.message_time.setText(split[0]);
+
+                                if (state.equals("2")) {
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                } else if (state.equals("1")) {
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+                                } else {
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+                                }
                             }
 
-                        }
-                        else if (messages.getFrom().equals(chatUserId)) {
+                        } else if (messages.getFrom().equals(chatUserId)) {
 
                             if(!state.equals("2")) {
+
+                                messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
+                                        .setValue(split[0] + "null" +","+dateFormat.format(new Date()));
+
                                 messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("state").setValue("2");
                             }
 
@@ -431,7 +454,8 @@ public class MessageActivity extends AppCompatActivity {
                             messageViewHolder.stamp.setVisibility(View.GONE);
                             messageViewHolder.messageLayout.setGravity(Gravity.START);
                             messageViewHolder.message.setText(messages.getMessage());
-                            messageViewHolder.message_time.setText(messages.getTime());
+
+                            messageViewHolder.message_time.setText(split[0]);
 
                         }
 
@@ -464,20 +488,22 @@ public class MessageActivity extends AppCompatActivity {
                             @Override
                             public void onClick(View v) {
 
-                                if (selectedItems.size()>0){
+                                if(!messages.getDelete().equals(currentUid)) {
+                                    if (selectedItems.size()>0){
 
-                                    if (selectedItems.containsKey(position)){
-                                        selectedItems.remove(position);
-                                        deSelectMsg(messageViewHolder.itemView);
+                                        if (selectedItems.containsKey(position)){
+                                            selectedItems.remove(position);
+                                            deSelectMsg(messageViewHolder.itemView);
+                                            checkMsg(selectedItemsModel);
+                                            return;
+                                        }
+
+                                        selectedItems.put(position,selectedItemsModel);
+                                        selectMsg(messageViewHolder.itemView);
                                         checkMsg(selectedItemsModel);
                                         return;
+
                                     }
-
-                                    selectedItems.put(position,selectedItemsModel);
-                                    selectMsg(messageViewHolder.itemView);
-                                    checkMsg(selectedItemsModel);
-                                    return;
-
                                 }
 
                                 if (messages.getState().equals("0")){
@@ -497,6 +523,8 @@ public class MessageActivity extends AppCompatActivity {
                                             case R.id.copy_menu:
                                                 ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                                                 ClipData clip = ClipData.newPlainText("chatter_message", messages.getMessage());
+
+                                                assert clipboard != null;
                                                 clipboard.setPrimaryClip(clip);
                                                 Toast.makeText(MessageActivity.this, "Text copied to clipboard", Toast.LENGTH_SHORT).show();
                                                 break;
@@ -507,18 +535,41 @@ public class MessageActivity extends AppCompatActivity {
                                                 break;
 
                                             case R.id.delete_for_me_menu:
-                                                //TODO
-                                                Toast.makeText(MessageActivity.this, "Delete for Me W.I.P", Toast.LENGTH_SHORT).show();
+
+                                                messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("delete")
+                                                        .addValueEventListener(new ValueEventListener() {
+                                                            @Override
+                                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                                if(dataSnapshot.hasChild(chatUserId)) {
+                                                                    getRef(position).removeValue();
+                                                                    notifyDataSetChanged();
+                                                                } else {
+                                                                    getRef(position).child("delete").setValue(currentUid);
+                                                                    notifyDataSetChanged();
+                                                                }
+                                                            }
+
+                                                            @Override
+                                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                                            }
+                                                        });
                                                 break;
 
                                             case R.id.delete_for_all_menu:
-                                                //TODO
-                                                Toast.makeText(MessageActivity.this, "Delete for Everyone W.I.P", Toast.LENGTH_SHORT).show();
+
+                                                getRef(position).removeValue(new DatabaseReference.CompletionListener() {
+                                                    @Override
+                                                    public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+                                                        notifyDataSetChanged();
+                                                    }
+                                                });
+
                                                 break;
 
                                             case R.id.details_menu:
-                                                //TODO
-                                                Toast.makeText(MessageActivity.this, "Details W.I.P", Toast.LENGTH_SHORT).show();
+                                                Intent intent = new Intent(MessageActivity.this , DetailsActivity.class);
+                                                startActivity(intent);
                                                 break;
                                         }
                                         return true;
@@ -536,11 +587,14 @@ public class MessageActivity extends AppCompatActivity {
                         userChatRef.child("seen").setValue(true);
                         userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
 
-                        messageRecyclerView.smoothScrollToPosition(newIndex);
+                        notifyDataSetChanged();
 
+                        if(newIndex > oldIndex) {
+                            messageRecyclerView.smoothScrollToPosition(newIndex);
+                        }
                     }
-
                 };
+
 
                 messageRecyclerView.setAdapter(messageAdapter);
 
@@ -635,6 +689,7 @@ public class MessageActivity extends AppCompatActivity {
             for (int key : selectedItems.keySet()){
                 SelectedItemsModel selectedItemsModel = selectedItems.get(key);
                 View view = selectedItemsModel.getView();
+
                 deSelectMsg(view);
             }
 
@@ -647,5 +702,10 @@ public class MessageActivity extends AppCompatActivity {
         super.onBackPressed();
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        messageData.child(currentUid).setValue(true);
+    }
 }
 

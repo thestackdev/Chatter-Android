@@ -4,9 +4,26 @@ public class Messages {
 
     private String message;
     private String type;
-    private String time;
     private String from;
     private String state;
+    private String times;
+    private String delete;
+
+    public String getDelete() {
+        return delete;
+    }
+
+    public void setDelete(String delete) {
+        this.delete = delete;
+    }
+
+    public String getTimes() {
+        return times;
+    }
+
+    public void setTimes(String times) {
+        this.times = times;
+    }
 
     public String getState() {
         return state;
@@ -43,14 +60,6 @@ public class Messages {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
     }
 
     public Messages(){
