@@ -33,6 +33,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.firebase.chatter.DetailsActivity;
 import com.firebase.chatter.R;
 import com.firebase.chatter.helper.GetTimeAgo;
 import com.firebase.chatter.helper.PopUpMenuHelper;
@@ -185,6 +186,7 @@ public class MessageActivity extends AppCompatActivity {
             ourMessageMap.put("from", currentUid);
             ourMessageMap.put("state", "0");
             ourMessageMap.put("times" , dateFormat.format(new Date()) + ",null,null");
+            ourMessageMap.put("delete" , "null");
 
             Map<String, Object> messageMap = new HashMap<>();
             messageMap.put(messageRef + "/" + key, ourMessageMap);
@@ -394,19 +396,26 @@ public class MessageActivity extends AppCompatActivity {
                         if (messages.getFrom().equals(currentUid)) {
 
                             messageViewHolder.messageLayout.setGravity(Gravity.END);
-                            messageViewHolder.message.setText(messages.getMessage());
                             messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_right);
-                            messageViewHolder.stamp.setVisibility(View.VISIBLE);
 
-                            messageViewHolder.message_time.setText(split[0]);
-
-                            if (state.equals("2")) {
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
-                            } else if (state.equals("1")) {
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+                            if(messages.getDelete().equals(currentUid)) {
+                                messageViewHolder.message.setText("Deleted For You");
                             } else {
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+
+                                messageViewHolder.message.setText(messages.getMessage());
+                                messageViewHolder.stamp.setVisibility(View.VISIBLE);
+
+                                messageViewHolder.message_time.setText(split[0]);
+
+                                if (state.equals("2")) {
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                } else if (state.equals("1")) {
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+                                } else {
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+                                }
                             }
+
 
                         } else if (messages.getFrom().equals(chatUserId)) {
 
@@ -445,20 +454,22 @@ public class MessageActivity extends AppCompatActivity {
                             @Override
                             public void onClick(View v) {
 
-                                if (selectedItems.size()>0){
+                                if(!messages.getDelete().equals(currentUid)) {
+                                    if (selectedItems.size()>0){
 
-                                    if (selectedItems.containsKey(position)){
-                                        selectedItems.remove(position);
-                                        deSelectMsg(v);
+                                        if (selectedItems.containsKey(position)){
+                                            selectedItems.remove(position);
+                                            deSelectMsg(v);
+                                            checkMsg(messages.getFrom());
+                                            return;
+                                        }
+
+                                        selectedItems.put(position,v);
+                                        selectMsg(v);
                                         checkMsg(messages.getFrom());
                                         return;
+
                                     }
-
-                                    selectedItems.put(position,v);
-                                    selectMsg(v);
-                                    checkMsg(messages.getFrom());
-                                    return;
-
                                 }
 
                                 PopupMenu popupMenu = new PopupMenu(v.getContext(), messageViewHolder.message);
@@ -486,8 +497,25 @@ public class MessageActivity extends AppCompatActivity {
                                                 break;
 
                                             case R.id.delete_for_me_menu:
-                                                //TODO
-                                                Toast.makeText(MessageActivity.this, "Delete for Me W.I.P", Toast.LENGTH_SHORT).show();
+
+                                                messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("delete")
+                                                        .addValueEventListener(new ValueEventListener() {
+                                                            @Override
+                                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                                if(dataSnapshot.hasChild(chatUserId)) {
+                                                                    getRef(position).removeValue();
+                                                                    notifyDataSetChanged();
+                                                                } else {
+                                                                    getRef(position).child("delete").setValue(currentUid);
+                                                                    notifyDataSetChanged();
+                                                                }
+                                                            }
+
+                                                            @Override
+                                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                                            }
+                                                        });
                                                 break;
 
                                             case R.id.delete_for_all_menu:
@@ -502,8 +530,8 @@ public class MessageActivity extends AppCompatActivity {
                                                 break;
 
                                             case R.id.details_menu:
-                                                //TODO
-                                                Toast.makeText(MessageActivity.this, "Details W.I.P", Toast.LENGTH_SHORT).show();
+                                                Intent intent = new Intent(MessageActivity.this , DetailsActivity.class);
+                                                startActivity(intent);
                                                 break;
                                         }
                                         return true;
@@ -513,7 +541,6 @@ public class MessageActivity extends AppCompatActivity {
                         });
 
                     }
-
 
                     @Override
                     public void onChildChanged(@NonNull ChangeEventType type, @NonNull DataSnapshot snapshot, int newIndex, int oldIndex) {

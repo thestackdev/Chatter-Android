@@ -7,6 +7,15 @@ public class Messages {
     private String from;
     private String state;
     private String times;
+    private String delete;
+
+    public String getDelete() {
+        return delete;
+    }
+
+    public void setDelete(String delete) {
+        this.delete = delete;
+    }
 
     public String getTimes() {
         return times;
