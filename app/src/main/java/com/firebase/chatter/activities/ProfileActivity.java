@@ -1,9 +1,12 @@
 package com.firebase.chatter.activities;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -14,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.firebase.chatter.R;
+import com.firebase.chatter.helper.AppAccents;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -54,7 +58,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         current_state = "not_friends";
 
-
         Toolbar toolbar = findViewById(R.id.profile_bar);
         btn1 = findViewById(R.id.btn1);
         btn2 = findViewById(R.id.btn2);
@@ -63,6 +66,25 @@ public class ProfileActivity extends AppCompatActivity {
         profile_status = findViewById(R.id.profile_status);
         profileImage = findViewById(R.id.profile_imageView);
         profile_user_id = getIntent().getStringExtra("profile_user_id");
+
+        AppAccents appAccents = new AppAccents(this);
+        appAccents.init();
+
+        btn1.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+        btn2.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+        btn3.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+
+        btn1.setTextColor(Color.parseColor(appAccents.getTextColor()));
+        btn2.setTextColor(Color.parseColor(appAccents.getTextColor()));
+        btn3.setTextColor(Color.parseColor(appAccents.getTextColor()));
+
+        toolbar.setBackgroundColor(Color.parseColor(appAccents.getAccentColor()));
+        toolbar.setTitleTextColor(Color.parseColor(appAccents.getTextColor()));
+
+        Window window = this.getWindow();
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(Color.parseColor(appAccents.getAccentColor()));
 
         DatabaseReference profileUserData = FirebaseDatabase.getInstance().getReference().child("Users").child(profile_user_id);
         profileUserData.keepSynced(true);

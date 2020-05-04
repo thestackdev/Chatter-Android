@@ -495,5 +495,10 @@ public class SettingsFragment extends Fragment {
         appAccents = new AppAccents(getActivity().getApplicationContext());
         appAccents.init();
 
+        Drawable selectImgAccentColor = DrawableCompat.wrap(
+                Objects.requireNonNull(getActivity().getDrawable(R.drawable.circle_background_2)));
+        DrawableCompat.setTint(selectImgAccentColor,Color.parseColor(appAccents.getAccentColor()));
+        changeImage.setBackground(selectImgAccentColor);
+
     }
 }
