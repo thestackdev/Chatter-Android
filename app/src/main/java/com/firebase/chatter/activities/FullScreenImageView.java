@@ -14,6 +14,12 @@ import androidx.appcompat.widget.Toolbar;
 import com.bumptech.glide.Glide;
 import com.firebase.chatter.R;
 import com.firebase.chatter.helper.AppAccents;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 import com.squareup.picasso.Picasso;
 
 import java.util.Objects;
@@ -56,5 +62,38 @@ public class FullScreenImageView extends AppCompatActivity {
             Picasso.get().load(R.drawable.avatar).into(imageView);
         }
 
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(firebaseUser != null) {
+            String userID = firebaseUser.getUid();
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                    .child("Users").child(userID).child("online");
+            databaseReference.setValue("true").addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(firebaseUser != null) {
+            String userID = firebaseUser.getUid();
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                    .child("Users").child(userID).child("online");
+            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+
+                }
+            });
+        }
     }
 }

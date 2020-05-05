@@ -11,9 +11,11 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -51,7 +53,9 @@ import com.firebase.chatter.models.SelectedItemsModel;
 import com.firebase.ui.common.ChangeEventType;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -76,6 +80,9 @@ import hani.momanii.supernova_emoji_library.Helper.EmojiconEditText;
 public class MessageActivity extends AppCompatActivity implements RecyclerItemTouchHelperListener {
 
     private DatabaseReference messageData;
+
+    Handler handler = new Handler();
+    Runnable runnable;
 
     private String messageNode;
 
@@ -215,6 +222,46 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
     @Override
     protected void onResume() {
+
+        handler.postDelayed(runnable = new Runnable() {
+            @Override
+            public void run() {
+                handler.postDelayed(runnable , 3000);
+                
+                usersData.child(chatUserId).child("online").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        String seenTime = Objects.requireNonNull(dataSnapshot.getValue()).toString();
+
+                        if (seenTime.equals("true")) {
+                            lastSeen.setText(R.string.online);
+                        } else {
+                            GetTimeAgo getTimeAgo = new GetTimeAgo();
+                            long getTime = Long.parseLong(seenTime);
+                            lastSeen.setText(getTimeAgo.getTimeAgo(getTime, getApplicationContext()));
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+            }
+        } , 3000);
+
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(firebaseUser != null) {
+            String userID = firebaseUser.getUid();
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                    .child("Users").child(userID).child("online");
+            databaseReference.setValue("true").addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+
+                }
+            });
+        }
 
         super.onResume();
 
@@ -377,25 +424,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             }
         });
 
-        usersData.child(chatUserId).child("online").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                String seenTime = Objects.requireNonNull(dataSnapshot.getValue()).toString();
-
-                if (seenTime.equals("true")) {
-                    lastSeen.setText(R.string.online);
-                } else {
-                    GetTimeAgo getTimeAgo = new GetTimeAgo();
-                    long getTime = Long.parseLong(seenTime);
-                    lastSeen.setText(getTimeAgo.getTimeAgo(getTime, getApplicationContext()));
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
     }
 
     private void setFirebaseAdapter(final int presentIndex) {
@@ -650,7 +678,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
     // Firebase Content Completed
 
-    public class MessageViewHolder extends RecyclerView.ViewHolder {
+    public static class MessageViewHolder extends RecyclerView.ViewHolder {
 
         private TextView message, message_time;
         private ImageView stamp;
@@ -751,7 +779,23 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     @Override
     protected void onPause() {
         super.onPause();
+
+        handler.removeCallbacks(runnable);
+
         messageData.child(currentUid).setValue(true);
+
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(firebaseUser != null) {
+            String userID = firebaseUser.getUid();
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                    .child("Users").child(userID).child("online");
+            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+
+                }
+            });
+        }
     }
 }
 

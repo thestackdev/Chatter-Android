@@ -29,10 +29,12 @@ import com.firebase.chatter.helper.AppAccents;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -220,9 +222,24 @@ public class SettingsFragment extends Fragment {
                 builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+
+                        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+                        if(firebaseUser != null) {
+                            String userID = firebaseUser.getUid();
+                            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                                    .child("Users").child(userID).child("online");
+                            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
+
+                                }
+                            });
+                        }
+
                         try {
                             FirebaseAuth.getInstance().signOut();
                             Intent intent = new Intent(getContext(), LoginActivity.class);
+
                             startActivity(intent);
 
                         } catch (Exception e) {
