@@ -42,6 +42,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.firebase.chatter.DetailsActivity;
+import com.firebase.chatter.ForwardActivity;
 import com.firebase.chatter.R;
 import com.firebase.chatter.helper.AppAccents;
 import com.firebase.chatter.helper.GetTimeAgo;
@@ -227,7 +228,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             @Override
             public void run() {
                 handler.postDelayed(runnable , 3000);
-                
+
                 usersData.child(chatUserId).child("online").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -447,7 +448,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                     protected void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, final int position, @NonNull final Messages messages) {
 
                         String state = messages.getState();
-                        String times = messages.getTimes();
+                        final String times = messages.getTimes();
 
                         String[] split = times.split("," , 2);
 
@@ -468,10 +469,12 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             messageViewHolder.message_time.setText(messages.getTimes());
 
                             if(messages.getDelete().equals(currentUid)) {
+
                                 messageViewHolder.message.setText(R.string.deleted_for_you);
                                 messageViewHolder.message.setTypeface(messageViewHolder.message.getTypeface(),Typeface.ITALIC);
-                                messageViewHolder.message_time.setText(split[0]);
+                                messageViewHolder.message_time.setVisibility(View.INVISIBLE);
                                 messageViewHolder.stamp.setVisibility(View.GONE);
+
                             } else {
 
                                 messageViewHolder.message.setTypeface(messageViewHolder.message.getTypeface(),Typeface.NORMAL);
@@ -589,7 +592,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                                             case R.id.forward_menu:
                                                 //TODO
-                                                Toast.makeText(MessageActivity.this, "Forward W.I.P", Toast.LENGTH_SHORT).show();
+                                                Intent intent = new Intent(MessageActivity.this , ForwardActivity.class);
+                                                startActivity(intent);
                                                 break;
 
                                             case R.id.delete_for_me_menu:
@@ -626,8 +630,9 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                                 break;
 
                                             case R.id.details_menu:
-                                                Intent intent = new Intent(MessageActivity.this , DetailsActivity.class);
-                                                startActivity(intent);
+                                                Intent forwardIntent = new Intent(MessageActivity.this , DetailsActivity.class);
+                                                forwardIntent.putExtra("details" , messages.getTimes());
+                                                startActivity(forwardIntent);
                                                 break;
                                         }
                                         return true;
@@ -733,6 +738,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                 msg_selected_delete.setVisibility(View.VISIBLE);
                 msg_selected_copy.setVisibility(View.VISIBLE);
                 msg_selected_forward.setVisibility(View.VISIBLE);
+
                 return;
 
             }

@@ -1,4 +1,8 @@
-package com.firebase.chatter.fragments;
+package com.firebase.chatter;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -9,23 +13,15 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import com.firebase.chatter.R;
 import com.firebase.chatter.activities.FullScreenImageView;
 import com.firebase.chatter.activities.ProfileActivity;
+import com.firebase.chatter.fragments.FriendsFragment;
 import com.firebase.chatter.models.Friends;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
@@ -35,51 +31,26 @@ import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class FriendsFragment extends Fragment {
-    private RecyclerView recyclerView;
+public class ForwardActivity extends AppCompatActivity {
+    private RecyclerView forwardRecyclerView;
     private DatabaseReference friendsData , usersData;
-    private FirebaseRecyclerAdapter<Friends, FriendsViewHolder> adapter;
 
-    public FriendsFragment () {
-
-    }
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
-    }
+        setContentView(R.layout.activity_forward);
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_friends, container, false);
-
-        String current_user_id = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
-
-        DatabaseReference rootData = FirebaseDatabase.getInstance().getReference();
-
-        friendsData = rootData.child("Friends").child(current_user_id);
-
-        usersData = rootData.child("Users");
-
-        recyclerView = view.findViewById(R.id.friends_recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-
-        return view;
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
+         forwardRecyclerView = findViewById(R.id.forward_recyclerView);
 
         FirebaseRecyclerOptions<Friends> firebaseRecyclerOptions = new FirebaseRecyclerOptions.Builder<Friends>()
                 .setQuery(friendsData , Friends.class).build();
 
-        adapter = new FirebaseRecyclerAdapter<Friends, FriendsViewHolder>(firebaseRecyclerOptions) {
+        //friendsViewHolder.online.setColorFilter(Color.RED);
+        FirebaseRecyclerAdapter<Friends, FriendsFragment.FriendsViewHolder> adapter = new FirebaseRecyclerAdapter<Friends, FriendsFragment.FriendsViewHolder>(firebaseRecyclerOptions) {
 
             @Override
-            protected void onBindViewHolder(@NonNull final FriendsViewHolder friendsViewHolder, int i, @NonNull final Friends friends) {
+            protected void onBindViewHolder(@NonNull final FriendsFragment.FriendsViewHolder friendsViewHolder, int i, @NonNull final Friends friends) {
 
                 final String friendUId = getRef(i).getKey();
                 friendsViewHolder.time_user.setVisibility(View.GONE);
@@ -97,7 +68,7 @@ public class FriendsFragment extends Fragment {
                         friendsViewHolder.name.setText(name);
                         friendsViewHolder.status.setText(friends.getDate());
 
-                        if(!online.equals("true")) {
+                        if (!online.equals("true")) {
                             //friendsViewHolder.online.setColorFilter(Color.RED);
                         }
 
@@ -107,6 +78,7 @@ public class FriendsFragment extends Fragment {
                                 @Override
                                 public void onSuccess() {
                                 }
+
                                 @Override
                                 public void onError(Exception e) {
                                     Picasso.get().load(thumbnail).placeholder(R.drawable.avatar).into(friendsViewHolder.user_image);
@@ -117,10 +89,10 @@ public class FriendsFragment extends Fragment {
                         friendsViewHolder.user_image.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                if(!thumbnail.equals("default")) {
+                                if (!thumbnail.equals("default")) {
                                     String image = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
                                     Uri imageUri = Uri.parse(image);
-                                    Intent intent = new Intent(v.getContext() , FullScreenImageView.class);
+                                    Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
                                     intent.setData(imageUri);
                                     startActivity(intent);
                                 } else {
@@ -144,13 +116,11 @@ public class FriendsFragment extends Fragment {
                 });
 
 
-
-
                 friendsViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Intent intent = new Intent(v.getContext(), ProfileActivity.class);
-                        intent.putExtra("profile_user_id",friendUId);
+                        intent.putExtra("profile_user_id", friendUId);
                         startActivity(intent);
                     }
                 });
@@ -158,41 +128,30 @@ public class FriendsFragment extends Fragment {
 
             @NonNull
             @Override
-            public FriendsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            public FriendsFragment.FriendsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
                 View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.users_single_layout, parent, false);
 
-                return new FriendsViewHolder(view);
+                return new FriendsFragment.FriendsViewHolder(view);
             }
         };
-        recyclerView.setAdapter(adapter);
+        forwardRecyclerView.setAdapter(adapter);
         adapter.startListening();
 
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-        assert adapter != null;
-        adapter.stopListening();
 
     }
 
     public static class FriendsViewHolder extends RecyclerView.ViewHolder {
 
-        public TextView name;
-        public TextView status;
-        public TextView time_user;
-        public CircleImageView user_image;
+        private TextView name , status, time_user;
+        CircleImageView user_image;
 
-        public FriendsViewHolder(@NonNull View itemView) {
+        FriendsViewHolder(@NonNull View itemView) {
             super(itemView);
 
             name = itemView.findViewById(R.id.single_name);
             status = itemView.findViewById(R.id.single_status);
             user_image = itemView.findViewById(R.id.users_single_image);
             time_user = itemView.findViewById(R.id.time_user);
-            //online = itemView.findViewById(R.id.online);
 
         }
     }
