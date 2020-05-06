@@ -4,6 +4,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
@@ -556,9 +557,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                 messageViewHolder.message_time.setText(split[0]);
 
                                 if (state.equals("2")) {
-                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_green);
                                 } else if (state.equals("1")) {
-                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_blue);
+                                    messageViewHolder.stamp.setImageTintList(ColorStateList.valueOf(Color.BLUE));
                                 } else {
                                     messageViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
                                 }

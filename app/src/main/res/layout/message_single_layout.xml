@@ -4,8 +4,7 @@
     android:id="@+id/message_single_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="5dp">
+    android:orientation="vertical">
 
     <LinearLayout
         android:id="@+id/layout_bg"
@@ -13,7 +12,7 @@
         android:layout_height="wrap_content"
         android:background="@drawable/background_left"
         android:padding="3dp"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/user_message"
@@ -24,27 +23,36 @@
             android:textColor="@color/white"
             style="@android:style/TextAppearance.Medium" />
 
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="4dp">
+
         <TextView
             android:id="@+id/message_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="4dp"
             style="@android:style/TextAppearance.Small"
             android:textColor="@color/white"
-            android:layout_marginStart="6dp"
             android:gravity="bottom"
             android:layout_gravity="bottom"/>
 
         <ImageView
             android:id="@+id/stamp"
-            android:layout_marginStart="10dp"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:gravity="bottom"
             android:layout_gravity="bottom"
-            android:layout_marginEnd="4dp"
-            android:layout_marginBottom="4dp"/>
+            android:layout_marginEnd="2dp"
+            android:layout_marginStart="10dp"
+            android:scaleType="centerInside"
+            android:padding="4dp"/>
 
     </LinearLayout>
+
 
 </LinearLayout>

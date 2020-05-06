@@ -12,5 +12,6 @@
     <color name="steel_blue">#5784BA</color>
 
     <color name="message_selected">#808080</color>
+    <color name="green">@android:color/holo_green_dark</color>
 
 </resources>

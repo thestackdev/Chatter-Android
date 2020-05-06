@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:width="16dp"
+        android:height="16dp"
+        android:left="6dp"
+        android:drawable="@drawable/ic_tick_done_green"/>
+
+    <item
+        android:width="16dp"
+        android:height="16dp"
+        android:right="6dp"
+        android:drawable="@drawable/ic_tick_done_green"/>
+
+
+</layer-list>
