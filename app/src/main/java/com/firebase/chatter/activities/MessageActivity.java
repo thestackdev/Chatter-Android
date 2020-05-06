@@ -11,9 +11,11 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -40,6 +42,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.firebase.chatter.DetailsActivity;
+import com.firebase.chatter.ForwardActivity;
 import com.firebase.chatter.R;
 import com.firebase.chatter.helper.AppAccents;
 import com.firebase.chatter.helper.GetTimeAgo;
@@ -51,7 +54,9 @@ import com.firebase.chatter.models.SelectedItemsModel;
 import com.firebase.ui.common.ChangeEventType;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -76,6 +81,9 @@ import hani.momanii.supernova_emoji_library.Helper.EmojiconEditText;
 public class MessageActivity extends AppCompatActivity implements RecyclerItemTouchHelperListener {
 
     private DatabaseReference messageData;
+
+    Handler handler = new Handler();
+    Runnable runnable;
 
     private String messageNode;
 
@@ -218,6 +226,46 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
     @Override
     protected void onResume() {
+
+        handler.postDelayed(runnable = new Runnable() {
+            @Override
+            public void run() {
+                handler.postDelayed(runnable , 3000);
+
+                usersData.child(chatUserId).child("online").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        String seenTime = Objects.requireNonNull(dataSnapshot.getValue()).toString();
+
+                        if (seenTime.equals("true")) {
+                            lastSeen.setText(R.string.online);
+                        } else {
+                            GetTimeAgo getTimeAgo = new GetTimeAgo();
+                            long getTime = Long.parseLong(seenTime);
+                            lastSeen.setText(getTimeAgo.getTimeAgo(getTime, getApplicationContext()));
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+            }
+        } , 3000);
+
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(firebaseUser != null) {
+            String userID = firebaseUser.getUid();
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                    .child("Users").child(userID).child("online");
+            databaseReference.setValue("true").addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+
+                }
+            });
+        }
 
         super.onResume();
 
@@ -385,25 +433,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             }
         });
 
-        usersData.child(chatUserId).child("online").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                String seenTime = Objects.requireNonNull(dataSnapshot.getValue()).toString();
-
-                if (seenTime.equals("true")) {
-                    lastSeen.setText(R.string.online);
-                } else {
-                    GetTimeAgo getTimeAgo = new GetTimeAgo();
-                    long getTime = Long.parseLong(seenTime);
-                    lastSeen.setText(getTimeAgo.getTimeAgo(getTime, getApplicationContext()));
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
     }
 
     private void setFirebaseAdapter(final int presentIndex) {
@@ -427,7 +456,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                     protected void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, final int position, @NonNull final Messages messages) {
 
                         String state = messages.getState();
-                        String times = messages.getTimes();
+                        final String times = messages.getTimes();
 
                         String[] split = times.split("," , 2);
 
@@ -448,10 +477,12 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             messageViewHolder.message_time.setText(messages.getTimes());
 
                             if(messages.getDelete().equals(currentUid)) {
+
                                 messageViewHolder.message.setText(R.string.deleted_for_you);
                                 messageViewHolder.message.setTypeface(messageViewHolder.message.getTypeface(),Typeface.ITALIC);
-                                messageViewHolder.message_time.setText(split[0]);
+                                messageViewHolder.message_time.setVisibility(View.INVISIBLE);
                                 messageViewHolder.stamp.setVisibility(View.GONE);
+
                             } else {
 
                                 messageViewHolder.message.setTypeface(messageViewHolder.message.getTypeface(),Typeface.NORMAL);
@@ -569,7 +600,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                                             case R.id.forward_menu:
                                                 //TODO
-                                                Toast.makeText(MessageActivity.this, "Forward W.I.P", Toast.LENGTH_SHORT).show();
+                                                Intent intent = new Intent(MessageActivity.this , ForwardActivity.class);
+                                                startActivity(intent);
                                                 break;
 
                                             case R.id.delete_for_me_menu:
@@ -606,8 +638,9 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                                 break;
 
                                             case R.id.details_menu:
-                                                Intent intent = new Intent(MessageActivity.this , DetailsActivity.class);
-                                                startActivity(intent);
+                                                Intent forwardIntent = new Intent(MessageActivity.this , DetailsActivity.class);
+                                                forwardIntent.putExtra("details" , messages.getTimes());
+                                                startActivity(forwardIntent);
                                                 break;
                                         }
                                         return true;
@@ -679,7 +712,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
     // Firebase Content Completed
 
-    public class MessageViewHolder extends RecyclerView.ViewHolder {
+    public static class MessageViewHolder extends RecyclerView.ViewHolder {
 
         private TextView message, message_time;
         private ImageView stamp;
@@ -699,6 +732,22 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     private void selectMsg(View view){
         view.setBackgroundColor(getResources().getColor(R.color.message_selected));
         msg_selected_count.setText(String.valueOf(selectedItems.size()));
+
+        msg_selected_copy.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                String copiedMessages = selectedItems.toString();
+
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("chatter_message", copiedMessages);
+
+                assert clipboard != null;
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(MessageActivity.this, "Text copied to clipboard", Toast.LENGTH_SHORT).show();
+
+            }
+        });
     }
 
     private void deSelectMsg(View view){
@@ -734,6 +783,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                 msg_selected_delete.setVisibility(View.VISIBLE);
                 msg_selected_copy.setVisibility(View.VISIBLE);
                 msg_selected_forward.setVisibility(View.VISIBLE);
+
                 return;
 
             }
@@ -780,7 +830,24 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     @Override
     protected void onPause() {
         super.onPause();
+
+        handler.removeCallbacks(runnable);
+
         messageData.child(currentUid).setValue(true);
+
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(firebaseUser != null) {
+            String userID = firebaseUser.getUid();
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                    .child("Users").child(userID).child("online");
+            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+
+                }
+            });
+        }
     }
+
 }
 

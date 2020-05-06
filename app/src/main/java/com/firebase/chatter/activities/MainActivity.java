@@ -23,6 +23,7 @@ import com.firebase.chatter.fragments.SearchFragment;
 import com.firebase.chatter.fragments.SettingsFragment;
 import com.firebase.chatter.helper.AppAccents;
 import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -179,26 +180,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        if (firebaseAuth.getCurrentUser() != null) {
-            databaseReference.child("online").setValue("true").addOnFailureListener(new OnFailureListener() {
+    protected void onResume() {
+        super.onResume();
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(firebaseUser != null) {
+            String userID = firebaseUser.getUid();
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                    .child("Users").child(userID).child("online");
+            databaseReference.setValue("true").addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
-                public void onFailure(@NonNull Exception e) {
-                    sendToLoginActivity();
+                public void onSuccess(Void aVoid) {
+
                 }
             });
         }
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        if (firebaseAuth.getCurrentUser() != null) {
-            databaseReference.child("online").setValue(ServerValue.TIMESTAMP).addOnFailureListener(new OnFailureListener() {
+    protected void onPause() {
+        super.onPause();
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(firebaseUser != null) {
+            String userID = firebaseUser.getUid();
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                    .child("Users").child(userID).child("online");
+            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
-                public void onFailure(@NonNull Exception e) {
-                    finish();
+                public void onSuccess(Void aVoid) {
+
                 }
             });
         }

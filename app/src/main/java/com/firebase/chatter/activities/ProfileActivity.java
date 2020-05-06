@@ -22,6 +22,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -324,58 +325,39 @@ public class ProfileActivity extends AppCompatActivity {
                 if(current_state.equals("friends")) {
 
                     chatRef.child(current_uid).addValueEventListener(new ValueEventListener() {
-                         @Override
-                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                             if (!dataSnapshot.hasChild(profile_user_id)) {
-                                 Map addChatMap = new HashMap();
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if (!dataSnapshot.hasChild(profile_user_id)) {
 
-                                 rootDatabase.child("messages").child(current_uid+profile_user_id).child(current_uid).setValue(false);
-                                 rootDatabase.child("messages").child(current_uid+profile_user_id).child(profile_user_id).setValue(false);
+                                createChatPage(current_uid, profile_user_id);
+                                sendToChatActivity(current_uid + profile_user_id);
 
-                                 addChatMap.put("seen", false);
-                                 addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
-                                 addChatMap.put("messageNode" , current_uid+profile_user_id);
+                            } else {
 
-                                 Map chatUserMap = new HashMap();
-                                 chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);
-                                 chatUserMap.put("Chat/" + profile_user_id + "/" + current_uid, addChatMap);
+                                FirebaseDatabase.getInstance().getReference().child("Chat").child(current_uid).child(profile_user_id)
+                                        .child("messageNode").addValueEventListener(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                                 rootDatabase.updateChildren(chatUserMap, new DatabaseReference.CompletionListener() {
-                                     @Override
-                                     public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+                                        String messageNode = Objects.requireNonNull(dataSnapshot.getValue()).toString();
 
-                                         if(databaseError == null) {
+                                        sendToChatActivity(messageNode);
 
-                                             Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
-                                             intent.putExtra("profile_user_id",profile_user_id);
-                                             intent.putExtra("userName",userName);
-                                             intent.putExtra("thumbnail" , userThumbnail);
-                                             intent.putExtra("image" , userImage);
-                                             intent.putExtra("messageNode" , current_uid+profile_user_id);
-                                             startActivity(intent);
-                                         }
-                                     }
-                                 });
+                                    }
 
-                             } else {
-                                 String messageNode = Objects.requireNonNull(dataSnapshot.child(profile_user_id).child("messageNode").getValue()).toString();
-                                 Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
-                                 intent.putExtra("profile_user_id",profile_user_id);
-                                 intent.putExtra("userName",userName);
-                                 intent.putExtra("thumbnail" , userThumbnail);
-                                 intent.putExtra("image" , userImage);
-                                 intent.putExtra("messageNode" , messageNode);
-                                 startActivity(intent);
-                             }
-                         }
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                    }
+                                });
+                            }
+                        }
 
                         @Override
                         public void onCancelled(@NonNull DatabaseError databaseError) {
 
                         }
                     });
-
-
 
 
 
@@ -413,5 +395,78 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void sendToChatActivity(String messageNode) {
+
+        Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
+        intent.putExtra("profile_user_id",profile_user_id);
+        intent.putExtra("userName",userName);
+        intent.putExtra("thumbnail" , userThumbnail);
+        intent.putExtra("image" , userImage);
+        intent.putExtra("messageNode" , messageNode);
+        startActivity(intent);
+        finish();
+    }
+
+    private void createChatPage(final String current_uid, final String profile_user_id) {
+
+        Map addChatMap = new HashMap();
+
+        final DatabaseReference createNode = FirebaseDatabase.getInstance().getReference()
+                .child("messages").child(current_uid+profile_user_id);
+
+        createNode.child(current_uid).setValue(true);
+        createNode.child(profile_user_id).setValue(true);
+
+        addChatMap.put("seen", false);
+        addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
+        addChatMap.put("messageNode" , current_uid+profile_user_id);
+
+        Map chatUserMap = new HashMap();
+        chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);
+        chatUserMap.put("Chat/" + profile_user_id + "/" + current_uid, addChatMap);
+
+        rootDatabase.updateChildren(chatUserMap, new DatabaseReference.CompletionListener() {
+            @Override
+            public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+
+            }
+        });
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(firebaseUser != null) {
+            String userID = firebaseUser.getUid();
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                    .child("Users").child(userID).child("online");
+            databaseReference.setValue("true").addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(firebaseUser != null) {
+            String userID = firebaseUser.getUid();
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                    .child("Users").child(userID).child("online");
+            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+
+                }
+            });
+        }
     }
 }
