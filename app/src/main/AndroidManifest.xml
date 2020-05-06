@@ -18,6 +18,18 @@
         <activity android:name=".ForwardActivity"></activity>
         <activity android:name=".DetailsActivity" />
         <activity android:name=".activities.FullScreenImageView" />
+
+
+        <service
+            android:name=".FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+
+
         <activity
             android:name=".activities.MessageActivity"
             android:parentActivityName=".activities.MainActivity"

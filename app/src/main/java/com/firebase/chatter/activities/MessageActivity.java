@@ -703,6 +703,22 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     private void selectMsg(View view){
         view.setBackgroundColor(getResources().getColor(R.color.message_selected));
         msg_selected_count.setText(String.valueOf(selectedItems.size()));
+
+        msg_selected_copy.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                String copiedMessages = selectedItems.toString();
+
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("chatter_message", copiedMessages);
+
+                assert clipboard != null;
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(MessageActivity.this, "Text copied to clipboard", Toast.LENGTH_SHORT).show();
+
+            }
+        });
     }
 
     private void deSelectMsg(View view){
@@ -803,5 +819,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             });
         }
     }
+
 }
 

@@ -2,11 +2,13 @@ package com.firebase.chatter;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,9 +21,11 @@ import com.firebase.chatter.fragments.FriendsFragment;
 import com.firebase.chatter.models.Friends;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
@@ -34,6 +38,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class ForwardActivity extends AppCompatActivity {
     private RecyclerView forwardRecyclerView;
     private DatabaseReference friendsData , usersData;
+    private String currentUID;
 
 
     @Override
@@ -42,18 +47,26 @@ public class ForwardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_forward);
 
          forwardRecyclerView = findViewById(R.id.forward_recyclerView);
+         forwardRecyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
 
-        FirebaseRecyclerOptions<Friends> firebaseRecyclerOptions = new FirebaseRecyclerOptions.Builder<Friends>()
+
+        currentUID = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
+
+         usersData = FirebaseDatabase.getInstance().getReference().child("Users");
+
+         friendsData = FirebaseDatabase.getInstance().getReference().child("Friends").child(currentUID);
+
+        FirebaseRecyclerOptions<Friends> forwardRecyclerOptions = new FirebaseRecyclerOptions.Builder<Friends>()
                 .setQuery(friendsData , Friends.class).build();
 
-        //friendsViewHolder.online.setColorFilter(Color.RED);
-        FirebaseRecyclerAdapter<Friends, FriendsFragment.FriendsViewHolder> adapter = new FirebaseRecyclerAdapter<Friends, FriendsFragment.FriendsViewHolder>(firebaseRecyclerOptions) {
+        FirebaseRecyclerAdapter adapter = new FirebaseRecyclerAdapter<Friends , ForwardViewHolder>(forwardRecyclerOptions) {
 
             @Override
-            protected void onBindViewHolder(@NonNull final FriendsFragment.FriendsViewHolder friendsViewHolder, int i, @NonNull final Friends friends) {
+            protected void onBindViewHolder(@NonNull final ForwardViewHolder forwardViewHolder, int i, @NonNull final Friends friends) {
 
                 final String friendUId = getRef(i).getKey();
-                friendsViewHolder.time_user.setVisibility(View.GONE);
+
+                forwardViewHolder.time_user.setVisibility(View.GONE);
 
                 assert friendUId != null;
                 usersData.child(friendUId).addValueEventListener(new ValueEventListener() {
@@ -65,28 +78,24 @@ public class ForwardActivity extends AppCompatActivity {
                         final String thumbnail = Objects.requireNonNull(dataSnapshot.child("thumbnail").getValue()).toString();
                         final String online = Objects.requireNonNull(dataSnapshot.child("online").getValue()).toString();
 
-                        friendsViewHolder.name.setText(name);
-                        friendsViewHolder.status.setText(friends.getDate());
-
-                        if (!online.equals("true")) {
-                            //friendsViewHolder.online.setColorFilter(Color.RED);
-                        }
+                        forwardViewHolder.name.setText(name);
+                        forwardViewHolder.status.setText(friends.getDate());
 
                         if (!thumbnail.equals("default")) {
                             Picasso.get().load(thumbnail).networkPolicy(NetworkPolicy.OFFLINE)
-                                    .placeholder(R.drawable.avatar).into(friendsViewHolder.user_image, new Callback() {
+                                    .placeholder(R.drawable.avatar).into(forwardViewHolder.user_image, new Callback() {
                                 @Override
                                 public void onSuccess() {
                                 }
 
                                 @Override
                                 public void onError(Exception e) {
-                                    Picasso.get().load(thumbnail).placeholder(R.drawable.avatar).into(friendsViewHolder.user_image);
+                                    Picasso.get().load(thumbnail).placeholder(R.drawable.avatar).into(forwardViewHolder.user_image);
                                 }
                             });
                         }
 
-                        friendsViewHolder.user_image.setOnClickListener(new View.OnClickListener() {
+                        forwardViewHolder.user_image.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
                                 if (!thumbnail.equals("default")) {
@@ -108,7 +117,7 @@ public class ForwardActivity extends AppCompatActivity {
                     }
                 });
 
-                friendsViewHolder.user_image.setOnClickListener(new View.OnClickListener() {
+                forwardViewHolder.user_image.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
 
@@ -116,7 +125,7 @@ public class ForwardActivity extends AppCompatActivity {
                 });
 
 
-                friendsViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                forwardViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Intent intent = new Intent(v.getContext(), ProfileActivity.class);
@@ -128,10 +137,10 @@ public class ForwardActivity extends AppCompatActivity {
 
             @NonNull
             @Override
-            public FriendsFragment.FriendsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            public ForwardViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
                 View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.users_single_layout, parent, false);
 
-                return new FriendsFragment.FriendsViewHolder(view);
+                return new ForwardViewHolder(view);
             }
         };
         forwardRecyclerView.setAdapter(adapter);
@@ -140,12 +149,12 @@ public class ForwardActivity extends AppCompatActivity {
 
     }
 
-    public static class FriendsViewHolder extends RecyclerView.ViewHolder {
+    public static class ForwardViewHolder extends RecyclerView.ViewHolder {
 
         private TextView name , status, time_user;
         CircleImageView user_image;
 
-        FriendsViewHolder(@NonNull View itemView) {
+        ForwardViewHolder(@NonNull View itemView) {
             super(itemView);
 
             name = itemView.findViewById(R.id.single_name);
