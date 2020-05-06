@@ -15,7 +15,6 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -116,7 +115,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     private AppAccents appAccents;
     private RelativeLayout message_reply_container;
     private TextView reply_username, reply_message;
-    private String userName;
+    private String userName, copiedMessages = "";
+    private boolean isReply = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -464,6 +464,69 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
                         }
 
+                        msg_selected_reply.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                replyMessage(position);
+                            }
+                        });
+
+                        msg_selected_fav.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                //TODO
+                            }
+                        });
+
+                        msg_selected_details.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                //TODO
+                            }
+                        });
+
+                        msg_selected_delete.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                //TODO
+                            }
+                        });
+
+                        msg_selected_forward.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                //TODO
+                            }
+                        });
+
+                        msg_selected_copy.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+
+                                if (selectedItems.size()>1){
+
+                                    for (int key : selectedItems.keySet()){
+                                        if (copiedMessages.equals(""))
+                                            copiedMessages = String.format("%s",selectedItems.get(key).getMessage());
+                                        else
+                                            copiedMessages = String.format("%s\n%s",copiedMessages,selectedItems.get(key).getMessage());
+                                        deSelectMsg(selectedItems.get(key).getView());
+                                    }
+
+                                }else {
+                                    copiedMessages = selectedItems.toString();
+                                }
+
+                                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                                ClipData clip = ClipData.newPlainText("chatter_message", copiedMessages);
+
+                                assert clipboard != null;
+                                clipboard.setPrimaryClip(clip);
+                                Toast.makeText(MessageActivity.this, "Text copied to clipboard", Toast.LENGTH_SHORT).show();
+
+                            }
+                        });
+
                         if (messages.getFrom().equals(currentUid)) {
 
                             messageViewHolder.messageLayout.setGravity(Gravity.END);
@@ -524,7 +587,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                 position,
                                 messageViewHolder.itemView,
                                 currentUid,
-                                messages.getFrom());
+                                messages.getFrom(),
+                                messages.getMessage());
 
                         if (selectedItems.containsKey(position)){
                             selectMsg(messageViewHolder.itemView);
@@ -671,40 +735,49 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                 messageAdapter.startListening();
 
+    }
+
+    private void replyMessage(int position){
+
+        isReply = true;
+
+        messageInput.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(messageInput, InputMethodManager.SHOW_IMPLICIT);
+        }
+        message_container.setBackground(getDrawable(R.drawable.message_background_reply));
+        message_reply_container.setVisibility(View.VISIBLE);
+        messageAdapter.notifyDataSetChanged();
+
+        String message = messageAdapter.getItem(position).getMessage();
+        String from = messageAdapter.getItem(position).getFrom();
+
+        if (from.equals(currentUid)){
+            reply_username.setText(R.string.you);
+        }else {
+            reply_username.setText(userName);
+        }
+
+        reply_message.setText(message);
+
+        message_reply_close.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                message_container.setBackground(getDrawable(R.drawable.message_background));
+                message_reply_container.setVisibility(View.GONE);
+                isReply = false;
             }
+        });
+
+    }
 
     @Override
     public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction, int position) {
 
         if (viewHolder instanceof MessageViewHolder){
 
-            messageInput.requestFocus();
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (imm != null) {
-                imm.showSoftInput(messageInput, InputMethodManager.SHOW_IMPLICIT);
-            }
-            message_container.setBackground(getDrawable(R.drawable.message_background_reply));
-            message_reply_container.setVisibility(View.VISIBLE);
-            messageAdapter.notifyDataSetChanged();
-
-            String message = messageAdapter.getItem(position).getMessage();
-            String from = messageAdapter.getItem(position).getFrom();
-
-            if (from.equals(currentUid)){
-                reply_username.setText(R.string.you);
-            }else {
-                reply_username.setText(userName);
-            }
-
-            reply_message.setText(message);
-
-            message_reply_close.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    message_container.setBackground(getDrawable(R.drawable.message_background));
-                    message_reply_container.setVisibility(View.GONE);
-                }
-            });
+            replyMessage(position);
 
         }
 
@@ -732,22 +805,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     private void selectMsg(View view){
         view.setBackgroundColor(getResources().getColor(R.color.message_selected));
         msg_selected_count.setText(String.valueOf(selectedItems.size()));
-
-        msg_selected_copy.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                String copiedMessages = selectedItems.toString();
-
-                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("chatter_message", copiedMessages);
-
-                assert clipboard != null;
-                clipboard.setPrimaryClip(clip);
-                Toast.makeText(MessageActivity.this, "Text copied to clipboard", Toast.LENGTH_SHORT).show();
-
-            }
-        });
     }
 
     private void deSelectMsg(View view){
