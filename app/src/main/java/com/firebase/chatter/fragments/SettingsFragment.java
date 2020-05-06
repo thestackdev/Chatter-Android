@@ -53,6 +53,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import a.gautham.library.UpdateActivity;
 import de.hdodenhof.circleimageview.CircleImageView;
 import id.zelory.compressor.Compressor;
 
@@ -60,7 +61,7 @@ public class SettingsFragment extends Fragment {
 
     private TextView user_name, user_status, edit_info, done_editing;
     private CircleImageView user_image;
-    private LinearLayout logout, accent_picker;
+    private LinearLayout logout, accent_picker, layout_check_update;
     private ImageView change_name, change_status, change_email, change_password;
     private DatabaseReference userData;
     private Uri imageUri;
@@ -271,6 +272,16 @@ public class SettingsFragment extends Fragment {
             public void onClick(View v) {
 
                 selectAccent();
+            }
+        });
+
+        layout_check_update.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent updateIntent = new Intent(getActivity(), UpdateActivity.class);
+                updateIntent.putExtra("username","krishna0928");
+                updateIntent.putExtra("repoName","Chatter");
+                startActivity(updateIntent);
             }
         });
 
@@ -508,6 +519,7 @@ public class SettingsFragment extends Fragment {
 
         logout = view.findViewById(R.id.layout_logout);
         accent_picker = view.findViewById(R.id.layout_accent_picker);
+        layout_check_update  = view.findViewById(R.id.layout_check_update);
 
         appAccents = new AppAccents(getActivity().getApplicationContext());
         appAccents.init();

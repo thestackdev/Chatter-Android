@@ -22,7 +22,6 @@ import com.firebase.chatter.fragments.FriendsFragment;
 import com.firebase.chatter.fragments.SearchFragment;
 import com.firebase.chatter.fragments.SettingsFragment;
 import com.firebase.chatter.helper.AppAccents;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -32,6 +31,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
+
+import a.gautham.library.AppUpdater;
+import a.gautham.library.helper.Display;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -55,6 +57,11 @@ public class MainActivity extends AppCompatActivity {
         } else {
             sendToLoginActivity();
         }
+
+        AppUpdater appUpdater = new AppUpdater(this);
+        appUpdater.setDisplay(Display.DIALOG);
+        appUpdater.setUpGithub("krishna0928", "Chatter");
+        appUpdater.start();
 
     }
 
@@ -194,6 +201,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+
     }
 
     @Override

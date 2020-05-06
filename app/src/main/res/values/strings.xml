@@ -47,5 +47,6 @@
     <string name="deleted_for_you">Deleted For You</string>
     <string name="online">online</string>
     <string name="you">You</string>
+    <string name="check_for_update">Check For Update</string>
 
 </resources>

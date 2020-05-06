@@ -560,7 +560,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                 } else if (state.equals("1")) {
                                     messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_blue);
                                 } else {
-                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_message_pending);
                                 }
                             }
 
