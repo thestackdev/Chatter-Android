@@ -66,6 +66,7 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
 
+import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -241,7 +242,13 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         handler.postDelayed(runnable = new Runnable() {
             @Override
             public void run() {
-                handler.postDelayed(runnable , 3000);
+                handler.postDelayed(runnable , 1000);
+
+                if(isInternetAvailable()) {
+                    messageData.child(currentUid).setValue(false);
+                } else {
+                    messageData.child(currentUid).setValue(true);
+                }
 
                 usersData.child(chatUserId).child("online").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
@@ -263,7 +270,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                     }
                 });
             }
-        } , 3000);
+        } , 1000);
 
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if(firebaseUser != null) {
@@ -279,8 +286,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         }
 
         super.onResume();
-
-        messageData.child(currentUid).setValue(false);
 
         setFirebaseAdapter(presentIndex);
 
@@ -560,12 +565,14 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             messageViewHolder.messageLayout.setGravity(Gravity.END);
 
                             messageViewHolder.message.setText(messages.getMessage());
+
                             Drawable bg_right = DrawableCompat.wrap(
                                     Objects.requireNonNull(getDrawable(R.drawable.background_right)));
+
                             DrawableCompat.setTint(bg_right,Color.parseColor(appAccents.getAccentColor()));
                             messageViewHolder.layout_bg.setBackground(bg_right);
                             messageViewHolder.stamp.setVisibility(View.VISIBLE);
-                            messageViewHolder.message_time.setText(messages.getTimes());
+                            messageViewHolder.message_time.setText(split[0]);
 
                             if(messages.getDelete().equals(currentUid)) {
 
@@ -583,9 +590,12 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                                 messageViewHolder.message_time.setText(split[0]);
 
-                                if (state.equals("2")) {
+                                if (state.equals("3")) {
                                     messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_green);
-                                } else if (state.equals("1")) {
+                                } else if (state.equals("2")) {
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
+                                }
+                                else if (state.equals("1")) {
                                     messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_blue);
                                 } else {
                                     messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_message_pending);
@@ -594,12 +604,13 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         } else if (messages.getFrom().equals(chatUserId)) {
 
-                            if(!state.equals("2")) {
+                            if(state.equals("2")) {
 
                                 messageData.child("Conversation").child(Objects.requireNonNull(getRef(position).getKey())).child("times")
                                         .setValue(split[0] + "null" +","+dateFormat.format(new Date()));
 
-                                messageData.child("Conversation").child(Objects.requireNonNull(getRef(position).getKey())).child("state").setValue("2");
+                                messageData.child("Conversation").child(Objects.requireNonNull(getRef(position)
+                                        .getKey())).child("state").setValue("3");
                             }
 
                             messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
@@ -941,6 +952,17 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                 }
             });
+        }
+    }
+
+    public boolean isInternetAvailable() {
+        try {
+            InetAddress ipAdress = InetAddress.getByName("google.com");
+            //You can replace it with your name
+            return !ipAdress.equals("");
+
+        } catch (Exception e) {
+            return false;
         }
     }
 
