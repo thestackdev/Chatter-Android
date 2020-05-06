@@ -115,7 +115,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     private AppAccents appAccents;
     private RelativeLayout message_reply_container;
     private TextView reply_username, reply_message;
-    private String userName, copiedMessages = "";
+    private String userName, copiedMessages = "", replyMsg = "", replyName = "";
     private boolean isReply = false;
 
     @Override
@@ -206,6 +206,17 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             ourMessageMap.put("state", "0");
             ourMessageMap.put("times" , dateFormat.format(new Date()) + ",null,null");
             ourMessageMap.put("delete" , "null");
+            if (isReply && !replyMsg.equals("") && !replyName.equals("")){
+                ourMessageMap.put("reply_message",replyMsg);
+                ourMessageMap.put("reply_username",replyName);
+                isReply = false;
+                message_reply_container.setVisibility(View.GONE);
+                message_container.setBackground(getDrawable(R.drawable.message_background));
+            }else {
+                ourMessageMap.put("reply_message","null");
+                ourMessageMap.put("reply_username","null");
+            }
+
 
             Map<String, Object> messageMap = new HashMap<>();
             messageMap.put(messageRef + "/" + key, ourMessageMap);
@@ -527,6 +538,23 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             }
                         });
 
+                        if (Objects.requireNonNull(messages.getReply_message()).equals("null")){
+
+                            messageViewHolder.replied_message_layout.setVisibility(View.GONE);
+                            messageViewHolder.replied_username_tv.setVisibility(View.GONE);
+                            messageViewHolder.replied_message_tv.setVisibility(View.GONE);
+
+                        }else {
+
+                            messageViewHolder.replied_username_tv.setText(messages.getReply_username());
+                            messageViewHolder.replied_message_tv.setText(messages.getReply_message());
+
+                            messageViewHolder.replied_message_layout.setVisibility(View.VISIBLE);
+                            messageViewHolder.replied_username_tv.setVisibility(View.VISIBLE);
+                            messageViewHolder.replied_message_tv.setVisibility(View.VISIBLE);
+
+                        }
+
                         if (messages.getFrom().equals(currentUid)) {
 
                             messageViewHolder.messageLayout.setGravity(Gravity.END);
@@ -770,6 +798,12 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             }
         });
 
+        replyMsg = messageAdapter.getItem(position).getMessage();
+        if (messageAdapter.getItem(position).getFrom().equals(currentUid))
+            replyName = "You";
+        else
+            replyName = userName;
+
     }
 
     @Override
@@ -787,9 +821,9 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView message, message_time;
+        private TextView message, message_time, replied_username_tv, replied_message_tv;
         private ImageView stamp;
-        private LinearLayout messageLayout, layout_bg;
+        private LinearLayout messageLayout, layout_bg, replied_message_layout;
 
         MessageViewHolder(@NonNull final View itemView) {
             super(itemView);
@@ -799,6 +833,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             messageLayout = itemView.findViewById(R.id.message_single_layout);
             layout_bg = itemView.findViewById(R.id.layout_bg);
             message_time = itemView.findViewById(R.id.message_time);
+            replied_message_layout = itemView.findViewById(R.id.replied_message_layout);
+            replied_username_tv = itemView.findViewById(R.id.replied_username);
+            replied_message_tv = itemView.findViewById(R.id.replied_message);
+
         }
     }
 

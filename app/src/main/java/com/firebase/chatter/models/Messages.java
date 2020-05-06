@@ -8,6 +8,8 @@ public class Messages {
     private String state;
     private String times;
     private String delete;
+    private String reply_message;
+    private String reply_username;
 
     public String getDelete() {
         return delete;
@@ -45,7 +47,6 @@ public class Messages {
         this.from = from;
     }
 
-
     public String getMessage() {
         return message;
     }
@@ -64,5 +65,21 @@ public class Messages {
 
     public Messages(){
 
+    }
+
+    public String getReply_message() {
+        return reply_message;
+    }
+
+    public void setReply_message(String reply_message) {
+        this.reply_message = reply_message;
+    }
+
+    public String getReply_username() {
+        return reply_username;
+    }
+
+    public void setReply_username(String reply_username) {
+        this.reply_username = reply_username;
     }
 }
