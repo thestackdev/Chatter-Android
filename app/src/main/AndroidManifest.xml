@@ -15,7 +15,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ForwardActivity"></activity>
+        <activity android:name=".ForwardActivity"/>
         <activity android:name=".DetailsActivity" />
         <activity android:name=".activities.FullScreenImageView" />
 
@@ -27,8 +27,6 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-
-
 
         <activity
             android:name=".activities.MessageActivity"
