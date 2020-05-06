@@ -514,7 +514,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                     }
 
                                 }else {
-                                    copiedMessages = selectedItems.toString();
+                                    copiedMessages = selectedItems.get(0).getMessage();
                                 }
 
                                 ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
