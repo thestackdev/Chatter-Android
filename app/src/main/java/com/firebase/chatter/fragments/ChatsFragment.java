@@ -266,7 +266,7 @@ public class ChatsFragment extends Fragment {
                                 }
 
                                 Intent intent = new Intent(v.getContext(), MessageActivity.class);
-                                intent.putExtra("profile_user_id", key );
+                                intent.putExtra("profile_user_id", key);
                                 intent.putExtra("userName", name);
                                 intent.putExtra("thumbnail", thumbnail);
                                 intent.putExtra("image", image);
