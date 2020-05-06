@@ -8,15 +8,17 @@ public class SelectedItemsModel {
     private View view;
     private String currentUid;
     private String fromUid;
+    private String message;
 
     public SelectedItemsModel() {
     }
 
-    public SelectedItemsModel(int position, View view, String currentUid, String fromUid) {
+    public SelectedItemsModel(int position, View view, String currentUid, String fromUid, String message) {
         this.position = position;
         this.view = view;
         this.currentUid = currentUid;
         this.fromUid = fromUid;
+        this.message = message;
     }
 
     public int getPosition() {
@@ -49,5 +51,13 @@ public class SelectedItemsModel {
 
     public void setFromUid(String fromUid) {
         this.fromUid = fromUid;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }
