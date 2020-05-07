@@ -2,10 +2,11 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/message_single_layout"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:layout_margin="6dp">
+    android:padding="12dp"
+    android:animateLayoutChanges="true">
 
     <LinearLayout
         android:id="@+id/layout_bg"
@@ -47,7 +48,7 @@
                     android:paddingBottom="2dp"
                     android:gravity="start"
                     android:textColor="@color/white"
-                    style="@android:style/TextAppearance.Medium" />
+                    style="@android:style/TextAppearance.Small" />
 
                 <TextView
                     android:id="@+id/replied_message"
@@ -59,7 +60,7 @@
                     android:paddingEnd="4dp"
                     android:paddingTop="2dp"
                     android:paddingBottom="2dp"
-                    style="@android:style/TextAppearance.Medium" />
+                    style="@android:style/TextAppearance.Small" />
 
             </LinearLayout>
 
@@ -74,35 +75,24 @@
             android:textColor="@color/white"
             style="@android:style/TextAppearance.Medium" />
 
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="3dp">
-
-        <TextView
-            android:id="@+id/message_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            style="@android:style/TextAppearance.Small"
-            android:textColor="@color/white"
-            android:gravity="bottom"
-            android:layout_gravity="bottom"/>
-
         <ImageView
             android:id="@+id/stamp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:gravity="bottom"
-            android:layout_gravity="bottom"
+            android:layout_gravity="end"
             android:layout_marginEnd="2dp"
             android:layout_marginStart="10dp"
             android:scaleType="centerInside"/>
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/message_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@android:style/TextAppearance.Small"
+        android:textColor="@color/white"
+        android:visibility="gone"/>
 
 </LinearLayout>
