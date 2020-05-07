@@ -5,7 +5,8 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="12dp"
+    android:animateLayoutChanges="true">
 
     <LinearLayout
         android:id="@+id/layout_bg"
@@ -47,7 +48,7 @@
                     android:paddingBottom="2dp"
                     android:gravity="start"
                     android:textColor="@color/white"
-                    style="@android:style/TextAppearance.Medium" />
+                    style="@android:style/TextAppearance.Small" />
 
                 <TextView
                     android:id="@+id/replied_message"
@@ -59,7 +60,7 @@
                     android:paddingEnd="4dp"
                     android:paddingTop="2dp"
                     android:paddingBottom="2dp"
-                    style="@android:style/TextAppearance.Medium" />
+                    style="@android:style/TextAppearance.Small" />
 
             </LinearLayout>
 
@@ -91,6 +92,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         style="@android:style/TextAppearance.Small"
-        android:textColor="@color/white"/>
+        android:textColor="@color/white"
+        android:visibility="gone"/>
 
 </LinearLayout>

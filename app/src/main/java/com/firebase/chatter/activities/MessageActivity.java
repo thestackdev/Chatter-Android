@@ -31,7 +31,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.PopupMenu;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -39,12 +38,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.firebase.chatter.DetailsActivity;
-import com.firebase.chatter.ForwardActivity;
 import com.firebase.chatter.R;
 import com.firebase.chatter.helper.AppAccents;
 import com.firebase.chatter.helper.GetTimeAgo;
-import com.firebase.chatter.helper.PopUpMenuHelper;
 import com.firebase.chatter.helper.RecyclerItemTouchHelper;
 import com.firebase.chatter.helper.RecyclerItemTouchHelperListener;
 import com.firebase.chatter.models.Messages;
@@ -450,6 +446,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
                         }
 
+                        messageViewHolder.message_time.setVisibility(View.GONE);
+
                         msg_selected_reply.setOnClickListener(v -> replyMessage(position));
 
                         msg_selected_fav.setOnClickListener(v -> {
@@ -539,7 +537,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         }
 
-
                         if (messages.getFrom().equals(currentUid)) {
 
                             messageViewHolder.messageLayout.setGravity(Gravity.END);
@@ -559,9 +556,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                                 messageViewHolder.itemView.setVisibility(View.GONE);
                                 messageViewHolder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
-                                /*messageViewHolder.message.setText(R.string.deleted_for_you);
-                                messageViewHolder.message.setTypeface(messageViewHolder.message.getTypeface(),Typeface.ITALIC);
-                                messageViewHolder.stamp.setVisibility(View.GONE);*/
 
                             } else {
 
@@ -640,22 +634,20 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         messageViewHolder.itemView.setOnClickListener(v -> {
 
-                            if(!messages.getDelete().equals(currentUid)) {
-                                if (selectedItems.size()>0){
+                            if (selectedItems.size()>0){
 
-                                    if (selectedItems.containsKey(position)){
-                                        selectedItems.remove(position);
-                                        deSelectMsg(messageViewHolder.itemView);
-                                        checkMsg(selectedItemsModel);
-                                        return;
-                                    }
-
-                                    selectedItems.put(position,selectedItemsModel);
-                                    selectMsg(messageViewHolder.itemView);
+                                if (selectedItems.containsKey(position)){
+                                    selectedItems.remove(position);
+                                    deSelectMsg(messageViewHolder.itemView);
                                     checkMsg(selectedItemsModel);
                                     return;
-
                                 }
+
+                                selectedItems.put(position,selectedItemsModel);
+                                selectMsg(messageViewHolder.itemView);
+                                checkMsg(selectedItemsModel);
+                                return;
+
                             }
 
                             if (messages.getState().equals("0")){
@@ -666,63 +658,11 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                 return;
                             }
 
-                            PopupMenu popupMenu = new PopupMenu(v.getContext(), messageViewHolder.message);
-                            popupMenu.inflate(R.menu.message_popup_menu);
-                            PopUpMenuHelper.insertMenuItemIcons(messageViewHolder.itemView.getContext(), popupMenu);
-                            popupMenu.show();
+                            if (messageViewHolder.message_time.getVisibility() == View.VISIBLE)
+                                messageViewHolder.message_time.setVisibility(View.GONE);
+                            else
+                                messageViewHolder.message_time.setVisibility(View.VISIBLE);
 
-                            popupMenu.setOnMenuItemClickListener(item -> {
-                                switch (item.getItemId()){
-
-                                    case R.id.copy_menu:
-
-                                        copySelectedMessagesToClipBoard(messages.getMessage());
-
-                                        break;
-
-                                    case R.id.forward_menu:
-                                        Intent intent = new Intent(MessageActivity.this , ForwardActivity.class);
-                                        startActivity(intent);
-                                        break;
-
-                                    case R.id.delete_for_me_menu:
-
-                                        messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("delete")
-                                                .addValueEventListener(new ValueEventListener() {
-                                                    @Override
-                                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                        if(dataSnapshot.hasChild(chatUserId)) {
-                                                            getRef(position).removeValue();
-                                                            notifyDataSetChanged();
-                                                        } else {
-                                                            getRef(position).child("delete").setValue(currentUid);
-                                                            notifyDataSetChanged();
-                                                        }
-                                                    }
-
-                                                    @Override
-                                                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                                    }
-                                                });
-                                        break;
-
-                                    case R.id.delete_for_all_menu:
-
-                                        getRef(position).removeValue((databaseError, databaseReference)
-                                                -> notifyDataSetChanged());
-
-                                        break;
-
-                                    case R.id.details_menu:
-                                        Intent forwardIntent = new Intent(MessageActivity.this , DetailsActivity.class);
-                                        forwardIntent.putExtra("details" , messages.getTimes());
-                                        forwardIntent.putExtra("message" , messages.getMessage());
-                                        startActivity(forwardIntent);
-                                        break;
-                                }
-                                return true;
-                            });
                         });
 
                     }
@@ -795,6 +735,14 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             replyName = "You";
         else
             replyName = userName;
+
+    }
+
+    private void showMessageTime(int position, RecyclerView.ViewHolder viewHolder){
+
+        messageAdapter.notifyDataSetChanged();
+        TextView time = viewHolder.itemView.findViewById(R.id.message_time);
+        time.setVisibility(View.VISIBLE);
 
     }
 
