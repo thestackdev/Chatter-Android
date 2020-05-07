@@ -2,6 +2,7 @@ package com.firebase.chatter.fragments;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,7 +23,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.firebase.chatter.R;
 import com.firebase.chatter.activities.FullScreenImageView;
 import com.firebase.chatter.activities.MessageActivity;
+import com.firebase.chatter.activities.ProfileActivity;
 import com.firebase.chatter.models.Chat;
+import com.firebase.chatter.models.SelectedItemsModel;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -57,7 +60,7 @@ public class ChatsFragment extends Fragment {
     private TextView chat_selected_count;
     private ImageView back_btn_chat_selected, chat_selected_delete, chat_selected_info,
             chat_selected_block, select_all_chat, chat_selected_readAll;
-    private Map<Integer, View> selectedItems = new HashMap<>();
+    private Map<Integer, SelectedItemsModel> selectedItems = new HashMap<>();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -129,13 +132,22 @@ public class ChatsFragment extends Fragment {
         FirebaseRecyclerOptions<Chat> firebaseRecyclerOptions = new FirebaseRecyclerOptions.Builder<Chat>()
                 .setQuery(query, Chat.class).build();
 
-        FirebaseRecyclerAdapter<Chat, ChatsViewHolder> adapter = new FirebaseRecyclerAdapter<Chat, ChatsViewHolder>(firebaseRecyclerOptions) {
+        FirebaseRecyclerAdapter adapter = new FirebaseRecyclerAdapter<Chat, ChatsViewHolder>(firebaseRecyclerOptions) {
             @Override
-            protected void onBindViewHolder(@NonNull final ChatsViewHolder chatsViewHolder, final int i, @NonNull final Chat chat) {
+            protected void onBindViewHolder(@NonNull final ChatsViewHolder chatsViewHolder, final int position, @NonNull final Chat chat) {
 
-                final String key = getRef(i).getKey();
+                final String key = getRef(position).getKey();
 
-                usersData.child(Objects.requireNonNull(getRef(i).getKey())).addValueEventListener(new ValueEventListener() {
+                final SelectedItemsModel selectedItemsModel = new SelectedItemsModel(
+                        position,
+                        chatsViewHolder.itemView,
+                        chat.messageNode);
+
+                if(!chat.isSeen()) {
+                    chatsViewHolder.message.setTypeface(Typeface.DEFAULT_BOLD);
+                }
+
+                usersData.child(Objects.requireNonNull(getRef(position).getKey())).addValueEventListener(new ValueEventListener() {
 
                     @Override
                     public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
@@ -176,80 +188,19 @@ public class ChatsFragment extends Fragment {
 
                         });
 
-                        Query lastMsg = messageData.child(chat.messageNode).child("Conversation").orderByKey().limitToLast(1);
 
-                                lastMsg.addChildEventListener(new ChildEventListener() {
-                                    @Override
-                                    public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                        chatsViewHolder.message.setText(Objects.requireNonNull(dataSnapshot.child("message").getValue()).toString());
-
-                                       String times = Objects.requireNonNull(dataSnapshot.child("times").getValue()).toString();
-
-                                       String[] split = times.split("," , 2);
-
-                                       chatsViewHolder.time.setText(split[0]);
-
-                                        String from = Objects.requireNonNull(dataSnapshot.child("from").getValue()).toString();
-
-                                        if(!from.equals(key)) {
-                                            String state = Objects.requireNonNull(dataSnapshot.child("state").getValue()).toString();
-                                            switch (state) {
-                                                case "3":
-                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
-                                                    break;
-                                                case "2":
-                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
-
-                                                    break;
-                                                case "1":
-                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
-
-                                                    break;
-                                                default:
-                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
-                                                    break;
-                                            }
-
-                                        }else {
-                                            chatsViewHolder.stamp.setVisibility(View.GONE);
-                                        }
-
-
-                                    }
-
-                                    @Override
-                                    public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                    }
-
-                                    @Override
-                                    public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-                                    }
-
-                                    @Override
-                                    public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                    }
-                                });
 
                         chatsViewHolder.itemView.setOnClickListener(v -> {
 
                             if (selectedItems.size()>0){
 
-                                if (selectedItems.containsKey(i)){
-                                    selectedItems.remove(i);
-                                    deSelectMsg(v);
+                                if (selectedItems.containsKey(position)){
+                                    selectedItems.remove(position);
+                                    deSelectMsg(selectedItemsModel);
                                     return;
                                 }
 
-                                selectedItems.put(i,v);
+                                selectedItems.put(position,selectedItemsModel);
                                 selectMsg(v);
                                 return;
 
@@ -265,11 +216,70 @@ public class ChatsFragment extends Fragment {
 
                         });
 
-                        chatsViewHolder.itemView.setOnLongClickListener(v -> {
-                            selectedItems.put(i,v);
-                            selectMsg(v);
-                            return true;
-                        });
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+
+
+
+                Query lastMsg = messageData.child(chat.messageNode).child("Conversation").orderByKey().limitToLast(1);
+
+                lastMsg.addChildEventListener(new ChildEventListener() {
+                    @Override
+                    public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                        chatsViewHolder.message.setText(Objects.requireNonNull(dataSnapshot.child("message").getValue()).toString());
+
+                        String times = Objects.requireNonNull(dataSnapshot.child("times").getValue()).toString();
+
+                        String[] split = times.split("," , 2);
+
+                        chatsViewHolder.time.setText(split[0]);
+
+                        String from = Objects.requireNonNull(dataSnapshot.child("from").getValue()).toString();
+
+                        if(!from.equals(key)) {
+                            String state = Objects.requireNonNull(dataSnapshot.child("state").getValue()).toString();
+                            switch (state) {
+                                case "3":
+                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                    break;
+                                case "2":
+                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
+
+                                    break;
+                                case "1":
+                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+
+                                    break;
+                                default:
+                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+                                    break;
+                            }
+
+                        }else {
+                            chatsViewHolder.stamp.setVisibility(View.GONE);
+                        }
+
+
+                    }
+
+                    @Override
+                    public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                    }
+
+                    @Override
+                    public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+                    }
+
+                    @Override
+                    public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
 
                     }
 
@@ -292,12 +302,10 @@ public class ChatsFragment extends Fragment {
                                         String messageKey = dataSnapshot.getKey();
                                         if (dataSnapshot.child("delete").getValue().toString().equals("null")) {
                                             messageData.child(node).child("Conversation").child(messageKey)
-                                                    .child("delete").setValue(current_Uid).addOnSuccessListener(aVoid -> {
-                                            });
+                                                    .child("delete").setValue(current_Uid).addOnSuccessListener(aVoid -> { });
                                         } else {
                                             messageData.child(node).child("Conversation").child(messageKey).removeValue()
-                                                    .addOnSuccessListener(aVoid -> {
-                                                    });
+                                                    .addOnSuccessListener(aVoid -> { });
                                         }
 
                                     }
@@ -324,6 +332,29 @@ public class ChatsFragment extends Fragment {
                                 });
                     }
                 });
+
+
+
+                chatsViewHolder.itemView.setOnLongClickListener(v -> {
+                    selectedItems.put(position , selectedItemsModel);
+                    selectMsg(v);
+                    return true;
+                });
+
+                chat_selected_info.setOnClickListener(v -> {
+                    for(int getKeys : selectedItems.keySet()) {
+                        Intent intent = new Intent(v.getContext() , ProfileActivity.class);
+                        intent.putExtra("profile_user_id" , getRef(getKeys).getKey());
+                        startActivity(intent);
+                        selectedItems.clear();
+                        chat_bar_layout.setVisibility(View.GONE);
+
+                    }
+
+                });
+
+
+
             }
 
             @NonNull
@@ -352,10 +383,12 @@ public class ChatsFragment extends Fragment {
 
         view.setBackgroundColor(getResources().getColor(R.color.message_selected));
         chat_selected_count.setText(String.valueOf(selectedItems.size()));
+
+
     }
 
-    private void deSelectMsg(View view){
-        view.setBackgroundColor(Color.TRANSPARENT);
+    private void deSelectMsg(SelectedItemsModel selectedItemsModel){
+        selectedItemsModel.getView().setBackgroundColor(Color.TRANSPARENT);
         chat_selected_count.setText(String.valueOf(selectedItems.size()));
 
         if (selectedItems.size()==0){
@@ -379,8 +412,8 @@ public class ChatsFragment extends Fragment {
         if (selectedItems.size()!=0){
 
             for (int key : selectedItems.keySet()){
-                View view = selectedItems.get(key);
-                deSelectMsg(view);
+                SelectedItemsModel selectedItemsModel = selectedItems.get(key);
+                deSelectMsg(selectedItemsModel);
             }
 
             selectedItems.clear();

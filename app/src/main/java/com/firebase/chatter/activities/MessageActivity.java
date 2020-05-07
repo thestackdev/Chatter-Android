@@ -3,7 +3,6 @@ package com.firebase.chatter.activities;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -16,7 +15,6 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -139,56 +137,38 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             }
         });
 
-        back_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        back_btn.setOnClickListener(v -> onBackPressed());
 
-                onBackPressed();
+        swipeRefreshLayout.setOnRefreshListener(() -> {
 
-            }
+            presentIndex = presentIndex + 20;
+
+            setFirebaseAdapter(presentIndex);
+
+            swipeRefreshLayout.setRefreshing(false);
+
         });
 
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-
-                presentIndex = presentIndex + 20;
-
-                setFirebaseAdapter(presentIndex);
-
-                swipeRefreshLayout.setRefreshing(false);
-
-            }
-        });
-
-        btnSend.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                sendMessage();
-            }
-        });
+        btnSend.setOnClickListener(v -> sendMessage());
 
         final RelativeLayout rootView = findViewById(R.id.root);
 
-        icons.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        icons.setOnClickListener(v -> {
 
-                EmojIconActions emojIcon = new EmojIconActions(MessageActivity.this, rootView, messageInput, icons);
-                emojIcon.ShowEmojIcon();
-                emojIcon.setUseSystemEmoji(true);
-                emojIcon.setKeyboardListener(new EmojIconActions.KeyboardListener() {
-                    @Override
-                    public void onKeyboardOpen() {
+            EmojIconActions emojIcon = new EmojIconActions(MessageActivity.this, rootView, messageInput, icons);
+            emojIcon.ShowEmojIcon();
+            emojIcon.setUseSystemEmoji(true);
+            emojIcon.setKeyboardListener(new EmojIconActions.KeyboardListener() {
+                @Override
+                public void onKeyboardOpen() {
 
-                    }
+                }
 
-                    @Override
-                    public void onKeyboardClose() {
+                @Override
+                public void onKeyboardClose() {
 
-                    }
-                });
-            }
+                }
+            });
         });
 
     }
@@ -230,13 +210,11 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
             messageInput.setText("");
 
-            rootDatabase.updateChildren(messageMap , new DatabaseReference.CompletionListener() {
-                @Override
-                public void onComplete(@Nullable final DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                    if (databaseError == null) {
-                        currentChatRef.child("seen").setValue(false);
-                        currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
-                    }
+            rootDatabase.updateChildren(messageMap , (databaseError, databaseReference) -> {
+                if (databaseError == null) {
+                    userChatRef.child("seen").setValue(false);
+                    userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                    currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
                 }
             });
         }
@@ -248,7 +226,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         messageData.child(currentUid).setValue(false);
 
         handler.postDelayed(runnable = () -> {
-            handler.postDelayed(runnable , 1000);
+            handler.postDelayed(runnable , 2000);
 
             usersData.child(chatUserId).child("online").addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
@@ -269,18 +247,15 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                 }
             });
-        }, 1000);
+        }, 2000);
 
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if(firebaseUser != null) {
             String userID = firebaseUser.getUid();
             DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
                     .child("Users").child(userID).child("online");
-            databaseReference.setValue("true").addOnSuccessListener(new OnSuccessListener<Void>() {
-                @Override
-                public void onSuccess(Void aVoid) {
+            databaseReference.setValue("true").addOnSuccessListener(aVoid -> {
 
-                }
             });
         }
 
@@ -434,17 +409,14 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             });
         }
 
-        user_image.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!thumbnail.equals("default")) {
-                    Uri imageUri = Uri.parse(image);
-                    Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
-                    intent.setData(imageUri);
-                    startActivity(intent);
-                } else {
-                    Toast.makeText(v.getContext(), "No Profile Picture", Toast.LENGTH_SHORT).show();
-                }
+        user_image.setOnClickListener(v -> {
+            if (!thumbnail.equals("default")) {
+                Uri imageUri = Uri.parse(image);
+                Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
+                intent.setData(imageUri);
+                startActivity(intent);
+            } else {
+                Toast.makeText(v.getContext(), "No Profile Picture", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -481,67 +453,53 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
                         }
 
-                        msg_selected_reply.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                replyMessage(position);
-                            }
+                        msg_selected_reply.setOnClickListener(v -> replyMessage(position));
+
+                        msg_selected_fav.setOnClickListener(v -> {
+                            //TODO
                         });
 
-                        msg_selected_fav.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                //TODO
-                            }
-                        });
+                        msg_selected_delete.setOnClickListener(v -> {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
+                            builder.setTitle("Are You Sure ?").setCancelable(false);
 
-                        msg_selected_delete.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
-                                builder.setTitle("Are You Sure ?").setCancelable(false);
+                            builder.setPositiveButton("Delete For EveryOne", (dialog, which) -> {
+                                for(int items : selectedItems.keySet()) {
+                                    getRef(items).removeValue().addOnSuccessListener(aVoid -> { });
+                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+                                }
+                                message_selected_bar.setVisibility(View.INVISIBLE);
+                                message_bar.setVisibility(View.VISIBLE);
+                                selectedItems.clear();
+                            });
 
-                                builder.setPositiveButton("Delete For EveryOne", (dialog, which) -> {
-                                    for(int items : selectedItems.keySet()) {
-                                        getRef(items).removeValue().addOnSuccessListener(aVoid -> { });
-                                        deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
-                                    }
-                                    message_selected_bar.setVisibility(View.INVISIBLE);
-                                    message_bar.setVisibility(View.VISIBLE);
-                                    selectedItems.clear();
-                                });
+                            builder.setNegativeButton("Delete For Me" , ((dialog, which) -> {
+                                for(int items : selectedItems.keySet()) {
 
-                                builder.setNegativeButton("Delete For Me" , ((dialog, which) -> {
-                                    for(int items : selectedItems.keySet()) {
-
-                                        if(selectedItems.get(items).getDelete().equals("null")) {
-                                            getRef(items).child("delete").setValue(currentUid)
-                                                    .addOnSuccessListener(aVoid -> {});
-                                        } else {
-                                            getRef(items).removeValue().addOnSuccessListener(aVoid -> {});
-                                        }
-
-                                        deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+                                    if(selectedItems.get(items).getDelete().equals("null")) {
+                                        getRef(items).child("delete").setValue(currentUid)
+                                                .addOnSuccessListener(aVoid -> {});
+                                    } else {
+                                        getRef(items).removeValue().addOnSuccessListener(aVoid -> {});
                                     }
 
-                                    message_selected_bar.setVisibility(View.INVISIBLE);
-                                    message_bar.setVisibility(View.VISIBLE);
-                                    selectedItems.clear();
-                                }));
+                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+                                }
 
-                                builder.setNeutralButton("Cancel" , ((dialog, which) -> {
-                                    dialog.dismiss();
-                                }));
+                                message_selected_bar.setVisibility(View.INVISIBLE);
+                                message_bar.setVisibility(View.VISIBLE);
+                                selectedItems.clear();
+                            }));
 
-                                builder.create().show();
-                            }
+                            builder.setNeutralButton("Cancel" , ((dialog, which) -> {
+                                dialog.dismiss();
+                            }));
+
+                            builder.create().show();
                         });
 
-                        msg_selected_forward.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                //TODO
-                            }
+                        msg_selected_forward.setOnClickListener(v -> {
+                            //TODO
                         });
 
                         msg_selected_copy.setOnClickListener(v -> {
@@ -707,59 +665,57 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             PopUpMenuHelper.insertMenuItemIcons(messageViewHolder.itemView.getContext(), popupMenu);
                             popupMenu.show();
 
-                            popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                                @Override
-                                public boolean onMenuItemClick(MenuItem item) {
-                                    switch (item.getItemId()){
+                            popupMenu.setOnMenuItemClickListener(item -> {
+                                switch (item.getItemId()){
 
-                                        case R.id.copy_menu:
+                                    case R.id.copy_menu:
 
-                                            copySelectedMessagesToClipBoard(messages.getMessage());
+                                        copySelectedMessagesToClipBoard(messages.getMessage());
 
-                                            break;
+                                        break;
 
-                                        case R.id.forward_menu:
-                                            Intent intent = new Intent(MessageActivity.this , ForwardActivity.class);
-                                            startActivity(intent);
-                                            break;
+                                    case R.id.forward_menu:
+                                        Intent intent = new Intent(MessageActivity.this , ForwardActivity.class);
+                                        startActivity(intent);
+                                        break;
 
-                                        case R.id.delete_for_me_menu:
+                                    case R.id.delete_for_me_menu:
 
-                                            messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("delete")
-                                                    .addValueEventListener(new ValueEventListener() {
-                                                        @Override
-                                                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                            if(dataSnapshot.hasChild(chatUserId)) {
-                                                                getRef(position).removeValue();
-                                                                notifyDataSetChanged();
-                                                            } else {
-                                                                getRef(position).child("delete").setValue(currentUid);
-                                                                notifyDataSetChanged();
-                                                            }
+                                        messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("delete")
+                                                .addValueEventListener(new ValueEventListener() {
+                                                    @Override
+                                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                        if(dataSnapshot.hasChild(chatUserId)) {
+                                                            getRef(position).removeValue();
+                                                            notifyDataSetChanged();
+                                                        } else {
+                                                            getRef(position).child("delete").setValue(currentUid);
+                                                            notifyDataSetChanged();
                                                         }
+                                                    }
 
-                                                        @Override
-                                                        public void onCancelled(@NonNull DatabaseError databaseError) {
+                                                    @Override
+                                                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                                                        }
-                                                    });
-                                            break;
+                                                    }
+                                                });
+                                        break;
 
-                                        case R.id.delete_for_all_menu:
+                                    case R.id.delete_for_all_menu:
 
-                                            getRef(position).removeValue((databaseError, databaseReference)
-                                                    -> notifyDataSetChanged());
+                                        getRef(position).removeValue((databaseError, databaseReference)
+                                                -> notifyDataSetChanged());
 
-                                            break;
+                                        break;
 
-                                        case R.id.details_menu:
-                                            Intent forwardIntent = new Intent(MessageActivity.this , DetailsActivity.class);
-                                            forwardIntent.putExtra("details" , messages.getTimes());
-                                            startActivity(forwardIntent);
-                                            break;
-                                    }
-                                    return true;
+                                    case R.id.details_menu:
+                                        Intent forwardIntent = new Intent(MessageActivity.this , DetailsActivity.class);
+                                        forwardIntent.putExtra("details" , messages.getTimes());
+                                        forwardIntent.putExtra("message" , messages.getMessage());
+                                        startActivity(forwardIntent);
+                                        break;
                                 }
+                                return true;
                             });
                         });
 
@@ -769,13 +725,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                     public void onChildChanged(@NonNull ChangeEventType type, @NonNull DataSnapshot snapshot, int newIndex, int oldIndex) {
                         super.onChildChanged(type, snapshot, newIndex, oldIndex);
 
-                        userChatRef.child("seen").setValue(true);
-                        userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
-
-                        notifyDataSetChanged();
-
                         if(newIndex > oldIndex) {
+                            currentChatRef.child("seen").setValue(true);
                             messageRecyclerView.smoothScrollToPosition(newIndex);
+                            notifyDataSetChanged();
                         }
                     }
                 };
@@ -970,11 +923,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             String userID = firebaseUser.getUid();
             DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
                     .child("Users").child(userID).child("online");
-            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
-                @Override
-                public void onSuccess(Void aVoid) {
+            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(aVoid -> {
 
-                }
             });
         }
     }

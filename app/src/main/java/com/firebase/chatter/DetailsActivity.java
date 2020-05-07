@@ -8,18 +8,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.textview.MaterialTextView;
 
 public class DetailsActivity extends AppCompatActivity {
-    private MaterialTextView sentTime , deliveredTime , seenTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_details);
-        sentTime = findViewById(R.id.details_sent_time);
-        deliveredTime = findViewById(R.id.details_delivered_time);
-        seenTime = findViewById(R.id.details_seen_time);
+        MaterialTextView sentTime = findViewById(R.id.details_sent_time);
+        MaterialTextView deliveredTime = findViewById(R.id.details_delivered_time);
+        MaterialTextView seenTime = findViewById(R.id.details_seen_time);
+        MaterialTextView message = findViewById(R.id.details_message);
 
 
         String details = getIntent().getStringExtra("details");
+        String getMessage = getIntent().getStringExtra("message");
+
+        message.setText(getMessage);
 
         assert details != null;
         String[] split = details.split("," , 3);

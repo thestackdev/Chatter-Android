@@ -11,6 +11,16 @@ public class SelectedItemsModel {
     private String message;
     private String delete;
 
+    public String getMessageNode() {
+        return messageNode;
+    }
+
+    public void setMessageNode(String messageNode) {
+        this.messageNode = messageNode;
+    }
+
+    private String messageNode;
+
     public String getDelete() {
         return delete;
     }
@@ -20,6 +30,12 @@ public class SelectedItemsModel {
     }
 
     public SelectedItemsModel() {
+    }
+
+    public SelectedItemsModel(int position , View view , String messageNode) {
+        this.position = position;
+        this.view = view;
+        this.messageNode = messageNode;
     }
 
     public SelectedItemsModel(int position, View view, String currentUid, String fromUid, String message , String delete) {
