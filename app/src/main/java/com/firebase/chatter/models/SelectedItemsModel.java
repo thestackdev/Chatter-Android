@@ -9,16 +9,26 @@ public class SelectedItemsModel {
     private String currentUid;
     private String fromUid;
     private String message;
+    private String delete;
+
+    public String getDelete() {
+        return delete;
+    }
+
+    public void setDelete(String delete) {
+        this.delete = delete;
+    }
 
     public SelectedItemsModel() {
     }
 
-    public SelectedItemsModel(int position, View view, String currentUid, String fromUid, String message) {
+    public SelectedItemsModel(int position, View view, String currentUid, String fromUid, String message , String delete) {
         this.position = position;
         this.view = view;
         this.currentUid = currentUid;
         this.fromUid = fromUid;
         this.message = message;
+        this.delete = delete;
     }
 
     public int getPosition() {

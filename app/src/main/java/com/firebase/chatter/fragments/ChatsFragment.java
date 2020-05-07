@@ -25,6 +25,7 @@ import com.firebase.chatter.activities.MessageActivity;
 import com.firebase.chatter.models.Chat;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
@@ -50,6 +51,8 @@ public class ChatsFragment extends Fragment {
     private DatabaseReference messageData;
     private DatabaseReference chatRef;
 
+    private String current_Uid;
+
     private LinearLayout chat_bar_layout;
     private TextView chat_selected_count;
     private ImageView back_btn_chat_selected, chat_selected_delete, chat_selected_info,
@@ -63,7 +66,7 @@ public class ChatsFragment extends Fragment {
         initUI(view);
 
         DatabaseReference rootData = FirebaseDatabase.getInstance().getReference();
-        String current_Uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
+        current_Uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
 
         messageData = rootData.child("messages");
         usersData = rootData.child("Users");
@@ -159,21 +162,18 @@ public class ChatsFragment extends Fragment {
 
                         final String image = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
 
-                        chatsViewHolder.userImage.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                if (!thumbnail.equals("default")) {
+                        chatsViewHolder.userImage.setOnClickListener(v -> {
 
-                                    Uri imageUri = Uri.parse(image);
-                                    Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
-                                    intent.setData(imageUri);
-                                    startActivity(intent);
+                            if (!thumbnail.equals("default")) {
+                                Uri imageUri = Uri.parse(image);
+                                Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
+                                intent.setData(imageUri);
+                                startActivity(intent);
 
-                                } else {
-                                    Toast.makeText(v.getContext(), "No Profile Picture", Toast.LENGTH_SHORT).show();
-                                }
-
+                            } else {
+                                Toast.makeText(v.getContext(), "No Profile Picture", Toast.LENGTH_SHORT).show();
                             }
+
                         });
 
                         Query lastMsg = messageData.child(chat.messageNode).child("Conversation").orderByKey().limitToLast(1);
@@ -194,12 +194,21 @@ public class ChatsFragment extends Fragment {
 
                                         if(!from.equals(key)) {
                                             String state = Objects.requireNonNull(dataSnapshot.child("state").getValue()).toString();
-                                            if (state.equals("2")) {
-                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
-                                            } else if (state.equals("1")) {
-                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
-                                            } else {
-                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+                                            switch (state) {
+                                                case "3":
+                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                                    break;
+                                                case "2":
+                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
+
+                                                    break;
+                                                case "1":
+                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+
+                                                    break;
+                                                default:
+                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+                                                    break;
                                             }
 
                                         }else {
@@ -230,65 +239,89 @@ public class ChatsFragment extends Fragment {
                                     }
                                 });
 
-                                if(chat.seen) {
+                        chatsViewHolder.itemView.setOnClickListener(v -> {
 
-                                    messageData.child(chat.messageNode).orderByChild("state").equalTo("1")
-                                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                            Log.i("TAG", "onDataChange: "+dataSnapshot.getChildrenCount());
-                                        }
+                            if (selectedItems.size()>0){
 
-                                        @Override
-                                        public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                        }
-                                    });
-                                }
-
-
-                        chatsViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-
-                                if (selectedItems.size()>0){
-
-                                    if (selectedItems.containsKey(i)){
-                                        selectedItems.remove(i);
-                                        deSelectMsg(v);
-                                        return;
-                                    }
-
-                                    selectedItems.put(i,v);
-                                    selectMsg(v);
+                                if (selectedItems.containsKey(i)){
+                                    selectedItems.remove(i);
+                                    deSelectMsg(v);
                                     return;
-
                                 }
 
-                                Intent intent = new Intent(v.getContext(), MessageActivity.class);
-                                intent.putExtra("profile_user_id", key);
-                                intent.putExtra("userName", name);
-                                intent.putExtra("thumbnail", thumbnail);
-                                intent.putExtra("image", image);
-                                intent.putExtra("messageNode", chat.messageNode);
-                                startActivity(intent);
-
-                            }
-                        });
-
-                        chatsViewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
-                            @Override
-                            public boolean onLongClick(View v) {
                                 selectedItems.put(i,v);
                                 selectMsg(v);
-                                return true;
+                                return;
+
                             }
+
+                            Intent intent = new Intent(v.getContext(), MessageActivity.class);
+                            intent.putExtra("profile_user_id", key);
+                            intent.putExtra("userName", name);
+                            intent.putExtra("thumbnail", thumbnail);
+                            intent.putExtra("image", image);
+                            intent.putExtra("messageNode", chat.messageNode);
+                            startActivity(intent);
+
                         });
+
+                        chatsViewHolder.itemView.setOnLongClickListener(v -> {
+                            selectedItems.put(i,v);
+                            selectMsg(v);
+                            return true;
+                        });
+
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError databaseError) {
 
+                    }
+                });
+
+                chat_selected_delete.setOnClickListener(v -> {
+                    for(int keys : selectedItems.keySet()) {
+
+                        String node = "null";
+
+                        Log.i("TAG", "onBindViewHolder: "+node);
+
+                        messageData.child(node).child("Conversation").addChildEventListener(new ChildEventListener() {
+                                    @Override
+                                    public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                                        String messageKey = dataSnapshot.getKey();
+                                        if (dataSnapshot.child("delete").getValue().toString().equals("null")) {
+                                            messageData.child(node).child("Conversation").child(messageKey)
+                                                    .child("delete").setValue(current_Uid).addOnSuccessListener(aVoid -> {
+                                            });
+                                        } else {
+                                            messageData.child(node).child("Conversation").child(messageKey).removeValue()
+                                                    .addOnSuccessListener(aVoid -> {
+                                                    });
+                                        }
+
+                                    }
+
+                                    @Override
+                                    public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                                    }
+
+                                    @Override
+                                    public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+                                    }
+
+                                    @Override
+                                    public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                    }
+                                });
                     }
                 });
             }

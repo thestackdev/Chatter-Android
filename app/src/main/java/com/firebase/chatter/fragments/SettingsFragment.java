@@ -212,51 +212,44 @@ public class SettingsFragment extends Fragment {
             }
         });
 
-        logout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        logout.setOnClickListener(v -> {
 
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getContext()));
-                builder.setTitle("Logout").setCancelable(false).setMessage("Are You Sure");
+            AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getContext()));
+            builder.setTitle("Logout").setCancelable(false).setMessage("Are You Sure");
 
-                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
+            builder.setPositiveButton("Yes", (dialog, which) -> {
 
-                        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-                        if(firebaseUser != null) {
-                            String userID = firebaseUser.getUid();
-                            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
-                                    .child("Users").child(userID).child("online");
-                            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                @Override
-                                public void onSuccess(Void aVoid) {
+                FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+                if(firebaseUser != null) {
+                    String userID = firebaseUser.getUid();
+                    DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
+                            .child("Users").child(userID).child("online");
+                    databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
 
-                                }
-                            });
                         }
+                    });
+                }
 
-                        try {
-                            FirebaseAuth.getInstance().signOut();
-                            Intent intent = new Intent(getContext(), LoginActivity.class);
+                try {
+                    FirebaseAuth.getInstance().signOut();
+                    Intent intent = new Intent(getContext(), LoginActivity.class);
 
-                            startActivity(intent);
+                    startActivity(intent);
 
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-                builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-                builder.create().show();
-            }
-
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            builder.create().show();
         });
 
 

@@ -3,6 +3,7 @@ package com.firebase.chatter.activities;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -15,6 +16,7 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -32,6 +34,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -207,12 +211,14 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             ourMessageMap.put("state", "0");
             ourMessageMap.put("times" , dateFormat.format(new Date()) + ",null,null");
             ourMessageMap.put("delete" , "null");
+
             if (isReply && !replyMsg.equals("") && !replyName.equals("")){
                 ourMessageMap.put("reply_message",replyMsg);
                 ourMessageMap.put("reply_username",replyName);
                 isReply = false;
                 message_reply_container.setVisibility(View.GONE);
                 message_container.setBackground(getDrawable(R.drawable.message_background));
+
             }else {
                 ourMessageMap.put("reply_message","null");
                 ourMessageMap.put("reply_username","null");
@@ -239,38 +245,31 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     @Override
     protected void onResume() {
 
-        handler.postDelayed(runnable = new Runnable() {
-            @Override
-            public void run() {
-                handler.postDelayed(runnable , 1000);
+        messageData.child(currentUid).setValue(false);
 
-                if(isInternetAvailable()) {
-                    messageData.child(currentUid).setValue(false);
-                } else {
-                    messageData.child(currentUid).setValue(true);
+        handler.postDelayed(runnable = () -> {
+            handler.postDelayed(runnable , 1000);
+
+            usersData.child(chatUserId).child("online").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    String seenTime = Objects.requireNonNull(dataSnapshot.getValue()).toString();
+
+                    if (seenTime.equals("true")) {
+                        lastSeen.setText(R.string.online);
+                    } else {
+                        GetTimeAgo getTimeAgo = new GetTimeAgo();
+                        long getTime = Long.parseLong(seenTime);
+                        lastSeen.setText(getTimeAgo.getTimeAgo(getTime, getApplicationContext()));
+                    }
                 }
 
-                usersData.child(chatUserId).child("online").addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        String seenTime = Objects.requireNonNull(dataSnapshot.getValue()).toString();
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                        if (seenTime.equals("true")) {
-                            lastSeen.setText(R.string.online);
-                        } else {
-                            GetTimeAgo getTimeAgo = new GetTimeAgo();
-                            long getTime = Long.parseLong(seenTime);
-                            lastSeen.setText(getTimeAgo.getTimeAgo(getTime, getApplicationContext()));
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
-            }
-        } , 1000);
+                }
+            });
+        }, 1000);
 
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if(firebaseUser != null) {
@@ -474,7 +473,9 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                         String state = messages.getState();
                         final String times = messages.getTimes();
 
-                        String[] split = times.split("," , 2);
+                        String[] split = times.split("," , 3);
+
+                        split[2] = dateFormat.format(new Date());
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
@@ -494,17 +495,45 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             }
                         });
 
-                        msg_selected_details.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                //TODO
-                            }
-                        });
-
                         msg_selected_delete.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                //TODO
+                                AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
+                                builder.setTitle("Are You Sure ?").setCancelable(false);
+
+                                builder.setPositiveButton("Delete For EveryOne", (dialog, which) -> {
+                                    for(int items : selectedItems.keySet()) {
+                                        getRef(items).removeValue().addOnSuccessListener(aVoid -> { });
+                                        deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+                                    }
+                                    message_selected_bar.setVisibility(View.INVISIBLE);
+                                    message_bar.setVisibility(View.VISIBLE);
+                                    selectedItems.clear();
+                                });
+
+                                builder.setNegativeButton("Delete For Me" , ((dialog, which) -> {
+                                    for(int items : selectedItems.keySet()) {
+
+                                        if(selectedItems.get(items).getDelete().equals("null")) {
+                                            getRef(items).child("delete").setValue(currentUid)
+                                                    .addOnSuccessListener(aVoid -> {});
+                                        } else {
+                                            getRef(items).removeValue().addOnSuccessListener(aVoid -> {});
+                                        }
+
+                                        deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+                                    }
+
+                                    message_selected_bar.setVisibility(View.INVISIBLE);
+                                    message_bar.setVisibility(View.VISIBLE);
+                                    selectedItems.clear();
+                                }));
+
+                                builder.setNeutralButton("Cancel" , ((dialog, which) -> {
+                                    dialog.dismiss();
+                                }));
+
+                                builder.create().show();
                             }
                         });
 
@@ -515,32 +544,27 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             }
                         });
 
-                        msg_selected_copy.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
+                        msg_selected_copy.setOnClickListener(v -> {
 
-                                if (selectedItems.size()>1){
+                                for (int key : selectedItems.keySet()){
 
-                                    for (int key : selectedItems.keySet()){
-                                        if (copiedMessages.equals(""))
-                                            copiedMessages = String.format("%s",selectedItems.get(key).getMessage());
-                                        else
-                                            copiedMessages = String.format("%s\n%s",copiedMessages,selectedItems.get(key).getMessage());
-                                        deSelectMsg(selectedItems.get(key).getView());
+                                    if (copiedMessages.equals("")) {
+                                        copiedMessages = String.format("%s",selectedItems.get(key).getMessage());
+                                    }
+                                    else {
+                                        copiedMessages = String.format("%s\n%s",copiedMessages,selectedItems.get(key).getMessage());
                                     }
 
-                                }else {
-                                    copiedMessages = selectedItems.get(0).getMessage();
+                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(key)).getView());
                                 }
 
-                                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                                ClipData clip = ClipData.newPlainText("chatter_message", copiedMessages);
+                                message_selected_bar.setVisibility(View.INVISIBLE);
+                                message_bar.setVisibility(View.VISIBLE);
+                                selectedItems.clear();
 
-                                assert clipboard != null;
-                                clipboard.setPrimaryClip(clip);
-                                Toast.makeText(MessageActivity.this, "Text copied to clipboard", Toast.LENGTH_SHORT).show();
 
-                            }
+                            copySelectedMessagesToClipBoard(copiedMessages);
+
                         });
 
                         if (Objects.requireNonNull(messages.getReply_message()).equals("null")){
@@ -578,27 +602,28 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                                 messageViewHolder.message.setText(R.string.deleted_for_you);
                                 messageViewHolder.message.setTypeface(messageViewHolder.message.getTypeface(),Typeface.ITALIC);
-                                messageViewHolder.message_time.setVisibility(View.INVISIBLE);
                                 messageViewHolder.stamp.setVisibility(View.GONE);
 
                             } else {
 
                                 messageViewHolder.message.setTypeface(messageViewHolder.message.getTypeface(),Typeface.NORMAL);
-
                                 messageViewHolder.message.setText(messages.getMessage());
                                 messageViewHolder.stamp.setVisibility(View.VISIBLE);
-
                                 messageViewHolder.message_time.setText(split[0]);
 
-                                if (state.equals("3")) {
-                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_green);
-                                } else if (state.equals("2")) {
-                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
-                                }
-                                else if (state.equals("1")) {
-                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_blue);
-                                } else {
-                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_message_pending);
+                                switch (state) {
+                                    case "3":
+                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_green);
+                                        break;
+                                    case "2":
+                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
+                                        break;
+                                    case "1":
+                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_blue);
+                                        break;
+                                    default:
+                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_message_pending);
+                                        break;
                                 }
                             }
 
@@ -607,7 +632,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             if(state.equals("2")) {
 
                                 messageData.child("Conversation").child(Objects.requireNonNull(getRef(position).getKey())).child("times")
-                                        .setValue(split[0] + "null" +","+dateFormat.format(new Date()));
+                                        .setValue(split[0] +","+ split[1] +","+split[2]);
 
                                 messageData.child("Conversation").child(Objects.requireNonNull(getRef(position)
                                         .getKey())).child("state").setValue("3");
@@ -627,129 +652,115 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                 messageViewHolder.itemView,
                                 currentUid,
                                 messages.getFrom(),
-                                messages.getMessage());
+                                messages.getMessage(),
+                                messages.getDelete());
 
                         if (selectedItems.containsKey(position)){
                             selectMsg(messageViewHolder.itemView);
                             checkMsg(selectedItemsModel);
                         }
 
-                        messageViewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
-                            @Override
-                            public boolean onLongClick(View v) {
+                        messageViewHolder.itemView.setOnLongClickListener(v -> {
 
-                                if (!messages.getDelete().equals("null")){
-                                    return false;
-                                }
-
-                                selectedItems.put(position, selectedItemsModel);
-                                message_bar.setVisibility(View.INVISIBLE);
-                                message_selected_bar.setVisibility(View.VISIBLE);
-                                selectMsg(messageViewHolder.itemView);
-                                checkMsg(selectedItemsModel);
-                                return true;
+                            if (!messages.getDelete().equals("null")){
+                                return false;
                             }
+
+                            selectedItems.put(position, selectedItemsModel);
+                            message_bar.setVisibility(View.INVISIBLE);
+                            message_selected_bar.setVisibility(View.VISIBLE);
+                            selectMsg(messageViewHolder.itemView);
+                            checkMsg(selectedItemsModel);
+                            return true;
                         });
 
-                        messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                        messageViewHolder.itemView.setOnClickListener(v -> {
 
-                            @Override
-                            public void onClick(View v) {
+                            if(!messages.getDelete().equals(currentUid)) {
+                                if (selectedItems.size()>0){
 
-                                if(!messages.getDelete().equals(currentUid)) {
-                                    if (selectedItems.size()>0){
-
-                                        if (selectedItems.containsKey(position)){
-                                            selectedItems.remove(position);
-                                            deSelectMsg(messageViewHolder.itemView);
-                                            checkMsg(selectedItemsModel);
-                                            return;
-                                        }
-
-                                        selectedItems.put(position,selectedItemsModel);
-                                        selectMsg(messageViewHolder.itemView);
+                                    if (selectedItems.containsKey(position)){
+                                        selectedItems.remove(position);
+                                        deSelectMsg(messageViewHolder.itemView);
                                         checkMsg(selectedItemsModel);
                                         return;
-
                                     }
-                                }
 
-                                if (messages.getState().equals("0")){
+                                    selectedItems.put(position,selectedItemsModel);
+                                    selectMsg(messageViewHolder.itemView);
+                                    checkMsg(selectedItemsModel);
                                     return;
+
                                 }
-
-                                if (!messages.getDelete().equals("null")){
-                                    return;
-                                }
-
-                                PopupMenu popupMenu = new PopupMenu(v.getContext(), messageViewHolder.message);
-                                popupMenu.inflate(R.menu.message_popup_menu);
-                                PopUpMenuHelper.insertMenuItemIcons(messageViewHolder.itemView.getContext(), popupMenu);
-                                popupMenu.show();
-
-                                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                                    @Override
-                                    public boolean onMenuItemClick(MenuItem item) {
-                                        switch (item.getItemId()){
-
-                                            case R.id.copy_menu:
-                                                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                                                ClipData clip = ClipData.newPlainText("chatter_message", messages.getMessage());
-
-                                                assert clipboard != null;
-                                                clipboard.setPrimaryClip(clip);
-                                                Toast.makeText(MessageActivity.this, "Text copied to clipboard", Toast.LENGTH_SHORT).show();
-                                                break;
-
-                                            case R.id.forward_menu:
-                                                //TODO
-                                                Intent intent = new Intent(MessageActivity.this , ForwardActivity.class);
-                                                startActivity(intent);
-                                                break;
-
-                                            case R.id.delete_for_me_menu:
-
-                                                messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("delete")
-                                                        .addValueEventListener(new ValueEventListener() {
-                                                            @Override
-                                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                                if(dataSnapshot.hasChild(chatUserId)) {
-                                                                    getRef(position).removeValue();
-                                                                    notifyDataSetChanged();
-                                                                } else {
-                                                                    getRef(position).child("delete").setValue(currentUid);
-                                                                    notifyDataSetChanged();
-                                                                }
-                                                            }
-
-                                                            @Override
-                                                            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                                            }
-                                                        });
-                                                break;
-
-                                            case R.id.delete_for_all_menu:
-
-                                                getRef(position).removeValue(new DatabaseReference.CompletionListener() {
-                                                    @Override
-                                                    public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                                                        notifyDataSetChanged();
-                                                    }
-                                                });
-
-                                                break;
-
-                                            case R.id.details_menu:
-                                                Intent forwardIntent = new Intent(MessageActivity.this , DetailsActivity.class);
-                                                forwardIntent.putExtra("details" , messages.getTimes());
-                                                startActivity(forwardIntent);
-                                                break;
-                                        }
-                                        return true;
-                                    }
-                                });
                             }
+
+                            if (messages.getState().equals("0")){
+                                return;
+                            }
+
+                            if (!messages.getDelete().equals("null")){
+                                return;
+                            }
+
+                            PopupMenu popupMenu = new PopupMenu(v.getContext(), messageViewHolder.message);
+                            popupMenu.inflate(R.menu.message_popup_menu);
+                            PopUpMenuHelper.insertMenuItemIcons(messageViewHolder.itemView.getContext(), popupMenu);
+                            popupMenu.show();
+
+                            popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                                @Override
+                                public boolean onMenuItemClick(MenuItem item) {
+                                    switch (item.getItemId()){
+
+                                        case R.id.copy_menu:
+
+                                            copySelectedMessagesToClipBoard(messages.getMessage());
+
+                                            break;
+
+                                        case R.id.forward_menu:
+                                            Intent intent = new Intent(MessageActivity.this , ForwardActivity.class);
+                                            startActivity(intent);
+                                            break;
+
+                                        case R.id.delete_for_me_menu:
+
+                                            messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("delete")
+                                                    .addValueEventListener(new ValueEventListener() {
+                                                        @Override
+                                                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                            if(dataSnapshot.hasChild(chatUserId)) {
+                                                                getRef(position).removeValue();
+                                                                notifyDataSetChanged();
+                                                            } else {
+                                                                getRef(position).child("delete").setValue(currentUid);
+                                                                notifyDataSetChanged();
+                                                            }
+                                                        }
+
+                                                        @Override
+                                                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                                        }
+                                                    });
+                                            break;
+
+                                        case R.id.delete_for_all_menu:
+
+                                            getRef(position).removeValue((databaseError, databaseReference)
+                                                    -> notifyDataSetChanged());
+
+                                            break;
+
+                                        case R.id.details_menu:
+                                            Intent forwardIntent = new Intent(MessageActivity.this , DetailsActivity.class);
+                                            forwardIntent.putExtra("details" , messages.getTimes());
+                                            startActivity(forwardIntent);
+                                            break;
+                                    }
+                                    return true;
+                                }
+                            });
                         });
 
                     }
@@ -773,6 +784,17 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                 messageRecyclerView.setAdapter(messageAdapter);
 
                 messageAdapter.startListening();
+
+    }
+
+    private void copySelectedMessagesToClipBoard(String copiedMessages) {
+
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText("chatter_message", copiedMessages);
+
+        assert clipboard != null;
+        clipboard.setPrimaryClip(clip);
+        Toast.makeText(MessageActivity.this, "Copied", Toast.LENGTH_SHORT).show();
 
     }
 
@@ -940,6 +962,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         handler.removeCallbacks(runnable);
 
         messageData.child(currentUid).setValue(true);
+
+        messageAdapter.stopListening();
 
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if(firebaseUser != null) {

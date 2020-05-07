@@ -10,27 +10,30 @@ import android.graphics.Color;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
-import com.firebase.chatter.activities.MainActivity;
 import com.firebase.chatter.activities.MessageActivity;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.RemoteMessage;
 
-import java.util.Objects;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Random;
 
 public class FirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService {
     private NotificationManager notificationManager;
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa", Locale.ENGLISH);
+
+    @Override
+    public void onNewToken(@NonNull String s) {
+        super.onNewToken(s);
+    }
 
     @Override
     public void onMessageReceived(@NonNull final RemoteMessage remoteMessage) {
@@ -44,22 +47,31 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             final String fromId = remoteMessage.getData().get("fromID");
             final String userImage = remoteMessage.getData().get("userImage");
             final String userThumb = remoteMessage.getData().get("userThumb");
+            final String times = remoteMessage.getData().get("times");
+
+            assert times != null;
+            String[] split = times.split("," , 3);
+
+            split[1] = dateFormat.format(new Date());
 
             assert messageID != null;
             assert pushID != null;
 
             DatabaseReference deliveredStatus = FirebaseDatabase.getInstance().getReference().child("messages")
-                    .child(messageID).child("Conversation").child(pushID).child("state");
+                    .child(messageID).child("Conversation").child(pushID);
 
-                    deliveredStatus.setValue("2").addOnSuccessListener(new OnSuccessListener<Void>() {
+                    deliveredStatus.child("state").setValue("2").addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
+                            deliveredStatus.child("times").setValue(split[0]+","+split[1]+",null")
+                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
 
+                                }
+                            });
                         }
                     });
-
-
-
 
 
             notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -93,6 +105,7 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
                     PendingIntent.FLAG_UPDATE_CURRENT);
             notificationBuilder.setContentIntent(contentIntent);
 
+            assert notificationManager != null;
             notificationManager.notify(notificationId, notificationBuilder.build());
 
 
