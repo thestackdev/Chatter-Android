@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -93,7 +94,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     private DatabaseReference rootDatabase;
     private DatabaseReference usersData;
     private DatabaseReference currentChatRef;
-    private DatabaseReference userChatRef;
+  //  private DatabaseReference userChatRef;
 
     private String currentUid, chatUserId;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -204,9 +205,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
             rootDatabase.updateChildren(messageMap , (databaseError, databaseReference) -> {
                 if (databaseError == null) {
-                    userChatRef.child("seen").setValue(false);
-                    userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                    rootDatabase.child("Chat").child(chatUserId).child(currentUid).child("seen").setValue(false);
+                    rootDatabase.child("Chat").child(chatUserId).child(currentUid).child("timeStamp").setValue(ServerValue.TIMESTAMP);
                     currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                    rootDatabase.child("Chat").child(chatUserId).child(currentUid).child("messageNode").setValue(messageNode);
                 }
             });
         }
@@ -366,7 +368,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
         currentChatRef = chatRef.child(currentUid).child(chatUserId);
 
-        userChatRef = chatRef.child(chatUserId).child(currentUid);
+      //  userChatRef = chatRef.child(chatUserId).child(currentUid);
 
         messageNode = getIntent().getStringExtra("messageNode");
 
@@ -689,6 +691,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     private void copySelectedMessagesToClipBoard(String copiedMessages) {
 
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+
         ClipData clip = ClipData.newPlainText("chatter_message", copiedMessages);
 
         assert clipboard != null;

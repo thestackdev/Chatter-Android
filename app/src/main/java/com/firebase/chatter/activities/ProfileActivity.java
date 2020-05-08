@@ -52,6 +52,8 @@ public class ProfileActivity extends AppCompatActivity {
     private String current_state;
     private ImageView profileImage;
 
+    private boolean check = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -256,52 +258,122 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             }
         });
-        btn2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(current_state.equals("req_received")) {
-                    friends_database.child(current_uid).addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            final String date = DateFormat.getDateTimeInstance().format(new Date());
-                            Map friendsMap = new HashMap();
-                            friendsMap.put("Friends/"+current_uid+"/"+profile_user_id+"/date",date);
-                            friendsMap.put("Friends/"+profile_user_id+"/"+current_uid+"/date",date);
+        btn2.setOnClickListener(v -> {
+            if(current_state.equals("req_received")) {
+                friends_database.child(current_uid).addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        final String date = DateFormat.getDateTimeInstance().format(new Date());
+                        Map friendsMap = new HashMap();
+                        friendsMap.put("Friends/"+current_uid+"/"+profile_user_id+"/date",date);
+                        friendsMap.put("Friends/"+profile_user_id+"/"+current_uid+"/date",date);
 
-                            friendsMap.put("Friend_req/"+current_uid+"/"+profile_user_id,null);
-                            friendsMap.put("Friend_req/"+profile_user_id+"/"+current_uid,null);
+                        friendsMap.put("Friend_req/"+current_uid+"/"+profile_user_id,null);
+                        friendsMap.put("Friend_req/"+profile_user_id+"/"+current_uid,null);
 
-                            rootDatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
+                        rootDatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
+                            @Override
+                            public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+                                if(databaseError == null) {
+                                    current_state = "friends";
+                                    btn2.setVisibility(View.VISIBLE);
+                                    btn2.setText("UNFRIEND");
+                                    btn3.setEnabled(true);
+                                    btn3.setVisibility(View.VISIBLE);
+                                    btn3.setText("Message");
+                                    btn2.setEnabled(true);
+                                    btn1.setVisibility(View.INVISIBLE);
+                                    btn1.setEnabled(false);
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+            } else if (current_state.equals("friends")) {
+                Map friendsMap = new HashMap();
+                friendsMap.put("Friends/"+current_uid+"/"+profile_user_id, null);
+                friendsMap.put("Friends/"+profile_user_id+"/"+current_uid, null);
+
+                rootDatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
+                    @Override
+                    public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+                        if(databaseError == null) {
+                            current_state = "not_friends";
+                            btn2.setVisibility(View.INVISIBLE);
+                            btn3.setEnabled(false);
+                            btn3.setVisibility(View.INVISIBLE);
+                            btn2.setEnabled(false);
+                            btn1.setText("Send Friend Request");
+                            btn1.setVisibility(View.VISIBLE);
+                            btn1.setEnabled(true);
+                        }
+                    }
+                });
+
+            }
+
+        });
+        btn3.setOnClickListener(v -> {
+            if(current_state.equals("friends")) {
+
+                chatRef.child(current_uid).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if (!dataSnapshot.hasChild(profile_user_id)) {
+
+
+                            if(check) {
+                                check = false;
+                                createChatPage(current_uid, profile_user_id);
+                                sendToChatActivity(current_uid + profile_user_id);
+                            }
+
+                        } else {
+
+                            FirebaseDatabase.getInstance().getReference().child("Chat").child(current_uid).child(profile_user_id)
+                                    .child("messageNode").addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
-                                public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                                    if(databaseError == null) {
-                                        current_state = "friends";
-                                        btn2.setVisibility(View.VISIBLE);
-                                        btn2.setText("UNFRIEND");
-                                        btn3.setEnabled(true);
-                                        btn3.setVisibility(View.VISIBLE);
-                                        btn3.setText("Message");
-                                        btn2.setEnabled(true);
-                                        btn1.setVisibility(View.INVISIBLE);
-                                        btn1.setEnabled(false);
+                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                                    if(check) {
+                                        check = false;
+                                        String messageNode = dataSnapshot.getValue().toString();
+                                        sendToChatActivity(messageNode);
                                     }
+
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
                                 }
                             });
                         }
+                    }
 
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                        }
-                    });
-                } else if (current_state.equals("friends")) {
-                    Map friendsMap = new HashMap();
-                    friendsMap.put("Friends/"+current_uid+"/"+profile_user_id, null);
-                    friendsMap.put("Friends/"+profile_user_id+"/"+current_uid, null);
+                    }
+                });
 
-                    rootDatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
-                        @Override
-                        public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+
+
+            } else {
+                friends_database.child(current_uid).addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        Map friendsMap = new HashMap();
+
+                        friendsMap.put("Friend_req/"+current_uid+"/"+profile_user_id,null);
+                        friendsMap.put("Friend_req/"+profile_user_id+"/"+current_uid,null);
+
+                        rootDatabase.updateChildren(friendsMap, (databaseError, databaseReference) -> {
                             if(databaseError == null) {
                                 current_state = "not_friends";
                                 btn2.setVisibility(View.INVISIBLE);
@@ -312,87 +384,14 @@ public class ProfileActivity extends AppCompatActivity {
                                 btn1.setVisibility(View.VISIBLE);
                                 btn1.setEnabled(true);
                             }
-                        }
-                    });
+                        });
+                    }
 
-                }
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
-            }
-        });
-        btn3.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(current_state.equals("friends")) {
-
-                    chatRef.child(current_uid).addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            if (!dataSnapshot.hasChild(profile_user_id)) {
-
-                                createChatPage(current_uid, profile_user_id);
-                                sendToChatActivity(current_uid + profile_user_id);
-
-                            } else {
-
-                                FirebaseDatabase.getInstance().getReference().child("Chat").child(current_uid).child(profile_user_id)
-                                        .child("messageNode").addValueEventListener(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                        String messageNode = Objects.requireNonNull(dataSnapshot.getValue()).toString();
-
-                                        sendToChatActivity(messageNode);
-
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                    }
-                                });
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                        }
-                    });
-
-
-
-                } else {
-                    friends_database.child(current_uid).addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            Map friendsMap = new HashMap();
-
-                            friendsMap.put("Friend_req/"+current_uid+"/"+profile_user_id,null);
-                            friendsMap.put("Friend_req/"+profile_user_id+"/"+current_uid,null);
-
-                            rootDatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
-                                @Override
-                                public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                                    if(databaseError == null) {
-                                        current_state = "not_friends";
-                                        btn2.setVisibility(View.INVISIBLE);
-                                        btn3.setEnabled(false);
-                                        btn3.setVisibility(View.INVISIBLE);
-                                        btn2.setEnabled(false);
-                                        btn1.setText("Send Friend Request");
-                                        btn1.setVisibility(View.VISIBLE);
-                                        btn1.setEnabled(true);
-                                    }
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                        }
-                    });
-                }
+                    }
+                });
             }
         });
     }
@@ -427,11 +426,8 @@ public class ProfileActivity extends AppCompatActivity {
         chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);
         chatUserMap.put("Chat/" + profile_user_id + "/" + current_uid, addChatMap);
 
-        rootDatabase.updateChildren(chatUserMap, new DatabaseReference.CompletionListener() {
-            @Override
-            public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+        rootDatabase.updateChildren(chatUserMap, (databaseError, databaseReference) -> {
 
-            }
         });
 
     }
@@ -461,11 +457,8 @@ public class ProfileActivity extends AppCompatActivity {
             String userID = firebaseUser.getUid();
             DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
                     .child("Users").child(userID).child("online");
-            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
-                @Override
-                public void onSuccess(Void aVoid) {
+            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(aVoid -> {
 
-                }
             });
         }
     }

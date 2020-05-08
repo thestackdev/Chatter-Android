@@ -8,8 +8,18 @@ public class SelectedItemsModel {
     private View view;
     private String currentUid;
     private String fromUid;
+
+    public String getChatUid() {
+        return chatUid;
+    }
+
+    public void setChatUid(String chatUid) {
+        this.chatUid = chatUid;
+    }
+
     private String message;
     private String delete;
+    private String chatUid;
 
     public String getMessageNode() {
         return messageNode;
@@ -32,9 +42,10 @@ public class SelectedItemsModel {
     public SelectedItemsModel() {
     }
 
-    public SelectedItemsModel(int position , View view , String messageNode) {
+    public SelectedItemsModel(int position , View view , String chatUid ,  String messageNode) {
         this.position = position;
         this.view = view;
+        this.chatUid = chatUid;
         this.messageNode = messageNode;
     }
 
