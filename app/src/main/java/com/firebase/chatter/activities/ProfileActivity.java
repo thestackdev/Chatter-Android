@@ -52,8 +52,6 @@ public class ProfileActivity extends AppCompatActivity {
     private String current_state;
     private ImageView profileImage;
 
-    private boolean check = true;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -325,35 +323,9 @@ public class ProfileActivity extends AppCompatActivity {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         if (!dataSnapshot.hasChild(profile_user_id)) {
-
-
-                            if(check) {
-                                check = false;
-                                createChatPage(current_uid, profile_user_id);
-                                sendToChatActivity(current_uid + profile_user_id);
-                            }
-
-                        } else {
-
-                            FirebaseDatabase.getInstance().getReference().child("Chat").child(current_uid).child(profile_user_id)
-                                    .child("messageNode").addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                    if(check) {
-                                        check = false;
-                                        String messageNode = dataSnapshot.getValue().toString();
-                                        sendToChatActivity(messageNode);
-                                    }
-
-                                }
-
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                }
-                            });
+                            createChatPage(current_uid, profile_user_id);
                         }
+                        sendToChatActivity();
                     }
 
                     @Override
@@ -361,8 +333,6 @@ public class ProfileActivity extends AppCompatActivity {
 
                     }
                 });
-
-
 
             } else {
                 friends_database.child(current_uid).addValueEventListener(new ValueEventListener() {
@@ -396,14 +366,13 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
-    private void sendToChatActivity(String messageNode) {
+    private void sendToChatActivity() {
 
         Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
         intent.putExtra("profile_user_id",profile_user_id);
         intent.putExtra("userName",userName);
         intent.putExtra("thumbnail" , userThumbnail);
         intent.putExtra("image" , userImage);
-        intent.putExtra("messageNode" , messageNode);
         startActivity(intent);
         finish();
     }
@@ -412,15 +381,9 @@ public class ProfileActivity extends AppCompatActivity {
 
         Map addChatMap = new HashMap();
 
-        final DatabaseReference createNode = FirebaseDatabase.getInstance().getReference()
-                .child("messages").child(current_uid+profile_user_id);
-
-        createNode.child(current_uid).setValue(true);
-        createNode.child(profile_user_id).setValue(true);
 
         addChatMap.put("seen", false);
         addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
-        addChatMap.put("messageNode" , current_uid+profile_user_id);
 
         Map chatUserMap = new HashMap();
         chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);
@@ -437,15 +400,11 @@ public class ProfileActivity extends AppCompatActivity {
         super.onResume();
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if(firebaseUser != null) {
+
             String userID = firebaseUser.getUid();
             DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
                     .child("Users").child(userID).child("online");
-            databaseReference.setValue("true").addOnSuccessListener(new OnSuccessListener<Void>() {
-                @Override
-                public void onSuccess(Void aVoid) {
-
-                }
-            });
+            databaseReference.setValue("true").addOnSuccessListener(aVoid -> {});
         }
     }
 

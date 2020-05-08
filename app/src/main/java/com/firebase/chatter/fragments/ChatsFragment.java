@@ -75,7 +75,7 @@ public class ChatsFragment extends Fragment {
         DatabaseReference rootData = FirebaseDatabase.getInstance().getReference();
         current_Uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
 
-        messageData = rootData.child("messages");
+        messageData = rootData.child("messages").child(current_Uid);
         usersData = rootData.child("Users");
         chatRef = rootData.child("Chat").child(current_Uid);
         userChatRef = rootData.child("Chat");
@@ -142,12 +142,11 @@ public class ChatsFragment extends Fragment {
                 final SelectedItemsModel selectedItemsModel = new SelectedItemsModel(
                         position,
                         chatsViewHolder.itemView,
-                        getRef(position).getKey(),
-                        chat.messageNode);
+                        getRef(position).getKey());
 
                 if(!chat.isSeen()) {
                     chatsViewHolder.message.setTypeface(Typeface.DEFAULT_BOLD);
-                    chatsViewHolder.message.setTextSize(16);
+                    chatsViewHolder.message.setTextSize(18);
                 }
 
                 usersData.child(Objects.requireNonNull(getRef(position).getKey())).addValueEventListener(new ValueEventListener() {
@@ -214,7 +213,6 @@ public class ChatsFragment extends Fragment {
                             intent.putExtra("userName", name);
                             intent.putExtra("thumbnail", thumbnail);
                             intent.putExtra("image", image);
-                            intent.putExtra("messageNode", chat.messageNode);
                             startActivity(intent);
 
                         });
@@ -227,86 +225,55 @@ public class ChatsFragment extends Fragment {
                     }
                 });
 
-                messageData.child(chat.messageNode).addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        if(!dataSnapshot.hasChild("Conversation")) {
+                messageData.child(getRef(position).getKey()).orderByKey().limitToLast(1)
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                            try {
-                                userChatRef.child(Objects.requireNonNull(getRef(position).getKey())).removeValue();
-                                messageData.child(chat.messageNode).removeValue();
-                                getRef(position).removeValue();
-                            } catch (IndexOutOfBoundsException e) {
-                                e.printStackTrace();
+                                for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
+
+                                    chatsViewHolder.message.setText(childSnapshot.child("message").getValue().toString());
+
+                                    String times = childSnapshot.child("times").getValue().toString();
+
+                                    String[] split = times.split(",", 2);
+
+                                    chatsViewHolder.time.setText(split[0]);
+
+                                    String from = childSnapshot.child("from").getValue().toString();
+
+                                    if (!from.equals(key)) {
+                                        String state = childSnapshot.child("state").getValue().toString();
+
+                                        switch (state) {
+                                            case "3":
+                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                                break;
+                                            case "2":
+                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
+
+                                                break;
+                                            case "1":
+                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+
+                                                break;
+                                            default:
+                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+                                                break;
+                                        }
+
+                                    } else {
+                                        chatsViewHolder.stamp.setVisibility(View.GONE);
+                                    }
+                                }
                             }
 
-                            notifyDataSetChanged();
-
-                        } else {
-                            messageData.child(chat.messageNode).child("Conversation").orderByKey().limitToLast(1)
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                            for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
-
-                                                String delete = childSnapshot.child("delete").getValue().toString();
-                                                if (delete.equals(current_Uid)) {
-                                                    chatsViewHolder.message.setText("You Deleted This Message");
-                                                } else {
-
-                                                    chatsViewHolder.message.setText(childSnapshot.child("message").getValue().toString());
-
-                                                    String times = childSnapshot.child("times").getValue().toString();
-
-                                                    String[] split = times.split(",", 2);
-
-                                                    chatsViewHolder.time.setText(split[0]);
-
-                                                    String from = childSnapshot.child("from").getValue().toString();
-
-                                                    if (!from.equals(key)) {
-                                                        String state = childSnapshot.child("state").getValue().toString();
-
-                                                        switch (state) {
-                                                            case "3":
-                                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
-                                                                break;
-                                                            case "2":
-                                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
-
-                                                                break;
-                                                            case "1":
-                                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
-
-                                                                break;
-                                                            default:
-                                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
-                                                                break;
-                                                        }
-
-                                                    } else {
-                                                        chatsViewHolder.stamp.setVisibility(View.GONE);
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        @Override
-                                        public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                        }
-                                    });
-                        }
-                    }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError databaseError) {
 
                     }
                 });
-
-
 
 
                 chat_selected_delete.setOnClickListener(v -> {
@@ -319,39 +286,8 @@ public class ChatsFragment extends Fragment {
 
                             for(int keys : selectedItems.keySet()) {
 
-                                String node = selectedItems.get(keys).getMessageNode();
                                 String uid = selectedItems.get(keys).getChatUid();
 
-                                messageData.child(node).child("Conversation").orderByKey()
-                                        .addListenerForSingleValueEvent(new ValueEventListener() {
-                                            @Override
-                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                                for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
-                                                    if (Objects.equals(childSnapshot.child("delete").getValue(), uid)) {
-                                                        messageData.child(node).child("Conversation").child(childSnapshot.getKey())
-                                                                .removeValue().addOnSuccessListener(aVoid -> {
-                                                        });
-                                                    } else {
-                                                        messageData.child(node).child("Conversation").child(childSnapshot.getKey())
-                                                                .child("delete").setValue(current_Uid).addOnSuccessListener(aVoid -> {
-                                                        });
-                                                    }
-                                                }
-
-                                                getRef(selectedItems.get(keys).getPosition()).removeValue();
-
-                                                notifyDataSetChanged();
-
-                                                deSelectMsg(Objects.requireNonNull(selectedItems.get(keys)));
-                                                selectedItems.remove(keys);
-                                            }
-
-                                            @Override
-                                            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                            }
-                                        });
                             }
 
                             chat_bar_layout.setVisibility(View.GONE);
@@ -361,18 +297,6 @@ public class ChatsFragment extends Fragment {
                         builder.setNegativeButton("Delete For EveryOne", (dialog, which) -> {
 
                             for(int keys : selectedItems.keySet()) {
-
-                                String node = selectedItems.get(keys).getMessageNode();
-                                String uid = selectedItems.get(keys).getChatUid();
-
-                                getRef(selectedItems.get(keys).getPosition()).removeValue();
-                                messageData.child(node).removeValue();
-                                userChatRef.child(uid).child(current_Uid).removeValue();
-
-                                notifyDataSetChanged();
-
-                                deSelectMsg(Objects.requireNonNull(selectedItems.get(keys)));
-                                selectedItems.remove(keys);
 
                             }
 

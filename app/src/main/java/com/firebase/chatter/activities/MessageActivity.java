@@ -75,12 +75,11 @@ import hani.momanii.supernova_emoji_library.Helper.EmojiconEditText;
 
 public class MessageActivity extends AppCompatActivity implements RecyclerItemTouchHelperListener {
 
-    private DatabaseReference messageData;
+    private DatabaseReference currentMessageData;
+    private DatabaseReference userMessageData;
 
     Handler handler = new Handler();
     Runnable runnable;
-
-    private String messageNode;
 
     private SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa", Locale.ENGLISH);
 
@@ -94,7 +93,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     private DatabaseReference rootDatabase;
     private DatabaseReference usersData;
     private DatabaseReference currentChatRef;
-  //  private DatabaseReference userChatRef;
+    private DatabaseReference userChatRef;
 
     private String currentUid, chatUserId;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -172,34 +171,36 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
         if (!TextUtils.isEmpty(message)) {
 
-            final String messageRef = "messages/" + messageNode + "/Conversation";
+            final String ourMessageRef = "messages/" + currentUid + "/" + chatUserId;
+            final String chatMessageRef = "messages/" + chatUserId + "/" + currentUid;
 
-            final String key = messageData.push().getKey();
+            final String key = currentMessageData.push().getKey();
 
-            final Map<String, String> ourMessageMap = new HashMap<>();
+            final Map<String, String> MessageMap = new HashMap<>();
 
-            ourMessageMap.put("message", message);
-            ourMessageMap.put("type", "text");
-            ourMessageMap.put("from", currentUid);
-            ourMessageMap.put("state", "0");
-            ourMessageMap.put("times" , dateFormat.format(new Date()) + ",null,null");
-            ourMessageMap.put("delete" , "null");
+            MessageMap.put("message", message);
+            MessageMap.put("type", "text");
+            MessageMap.put("from", currentUid);
+            MessageMap.put("state", "0");
+            MessageMap.put("times" , dateFormat.format(new Date()) + ",null,null");
 
             if (isReply && !replyMsg.equals("") && !replyName.equals("")){
-                ourMessageMap.put("reply_message",replyMsg);
-                ourMessageMap.put("reply_username",replyName);
+                MessageMap.put("reply_message",replyMsg);
+                MessageMap.put("reply_username",replyName);
                 isReply = false;
                 message_reply_container.setVisibility(View.GONE);
                 message_container.setBackground(getDrawable(R.drawable.message_background));
 
-            }else {
-                ourMessageMap.put("reply_message","null");
-                ourMessageMap.put("reply_username","null");
+            } else {
+
+                MessageMap.put("reply_message","null");
+                MessageMap.put("reply_username","null");
             }
 
 
             Map<String, Object> messageMap = new HashMap<>();
-            messageMap.put(messageRef + "/" + key, ourMessageMap);
+            messageMap.put(ourMessageRef + "/" + key, MessageMap);
+            messageMap.put(chatMessageRef + "/" + key, MessageMap);
 
             messageInput.setText("");
 
@@ -208,7 +209,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                     rootDatabase.child("Chat").child(chatUserId).child(currentUid).child("seen").setValue(false);
                     rootDatabase.child("Chat").child(chatUserId).child(currentUid).child("timeStamp").setValue(ServerValue.TIMESTAMP);
                     currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
-                    rootDatabase.child("Chat").child(chatUserId).child(currentUid).child("messageNode").setValue(messageNode);
                 }
             });
         }
@@ -216,8 +216,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
     @Override
     protected void onResume() {
-
-        messageData.child(currentUid).setValue(false);
 
         handler.postDelayed(runnable = () -> {
             handler.postDelayed(runnable , 2000);
@@ -368,13 +366,11 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
         currentChatRef = chatRef.child(currentUid).child(chatUserId);
 
-      //  userChatRef = chatRef.child(chatUserId).child(currentUid);
+        userChatRef = chatRef.child(chatUserId).child(currentUid);
 
-        messageNode = getIntent().getStringExtra("messageNode");
+        currentMessageData = rootDatabase.child("messages").child(currentUid).child(chatUserId);
 
-        assert messageNode != null;
-        messageData = rootDatabase.child("messages").child(messageNode);
-
+        userMessageData = rootDatabase.child("messages").child(currentUid).child(chatUserId);
 
     }
 
@@ -422,7 +418,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         // Firebase Content
 
                 messagesFirebaseRecyclerOptions = new FirebaseRecyclerOptions.Builder<Messages>()
-                        .setQuery(messageData.child("Conversation").limitToLast(presentIndex) , Messages.class).build();
+                        .setQuery(currentMessageData.limitToLast(presentIndex) , Messages.class).build();
 
 
                 messageAdapter = new FirebaseRecyclerAdapter<Messages, MessageViewHolder>(messagesFirebaseRecyclerOptions) {
@@ -473,12 +469,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             builder.setNegativeButton("Delete For Me" , ((dialog, which) -> {
                                 for(int items : selectedItems.keySet()) {
 
-                                    if(selectedItems.get(items).getDelete().equals("null")) {
-                                        getRef(items).child("delete").setValue(currentUid)
-                                                .addOnSuccessListener(aVoid -> {});
-                                    } else {
                                         getRef(items).removeValue().addOnSuccessListener(aVoid -> {});
-                                    }
 
                                     deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
                                 }
@@ -541,32 +532,29 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         if (messages.getFrom().equals(currentUid)) {
 
+                            System.out.println(currentUid);
+
+                            if(messages.getState().equals("0")) {
+
+                                    currentMessageData.child(Objects.requireNonNull(getRef(position).getKey()))
+                                            .child("state").setValue("1").addOnSuccessListener(aVoid -> {
+                                            });
+
+                            }
+
+
                             messageViewHolder.messageLayout.setGravity(Gravity.END);
                             messageViewHolder.message_time.setGravity(Gravity.END);
 
                             messageViewHolder.message.setText(messages.getMessage());
 
-                            Drawable bg_right = DrawableCompat.wrap(
-                                    Objects.requireNonNull(getDrawable(R.drawable.background_right)));
+                            Drawable bg_right = DrawableCompat.wrap(Objects.requireNonNull(getDrawable(R.drawable.background_right)));
 
                             DrawableCompat.setTint(bg_right,Color.parseColor(appAccents.getAccentColor()));
                             messageViewHolder.layout_bg.setBackground(bg_right);
                             messageViewHolder.stamp.setVisibility(View.VISIBLE);
                             messageViewHolder.message_time.setText(split[0]);
-
-                            if(messages.getDelete().equals(currentUid)) {
-
-                                messageViewHolder.itemView.setVisibility(View.GONE);
-                                messageViewHolder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
-
-                            } else {
-
-                                messageViewHolder.itemView.setVisibility(View.VISIBLE);
-                                messageViewHolder.itemView.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-                                messageViewHolder.message.setText(messages.getMessage());
-                                messageViewHolder.stamp.setVisibility(View.VISIBLE);
-                                messageViewHolder.message_time.setText(split[0]);
+                            messageViewHolder.message.setText(messages.getMessage());
 
                                 switch (state) {
                                     case "3":
@@ -582,16 +570,18 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                         messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_message_pending);
                                         break;
                                 }
-                            }
+
 
                         } else if (messages.getFrom().equals(chatUserId)) {
 
                             if(state.equals("2")) {
 
-                                messageData.child("Conversation").child(Objects.requireNonNull(getRef(position).getKey())).child("times")
+                                userMessageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
+                                        .setValue(split[0] +","+ split[1] +","+split[2]);
+                                currentMessageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
                                         .setValue(split[0] +","+ split[1] +","+split[2]);
 
-                                messageData.child("Conversation").child(Objects.requireNonNull(getRef(position)
+                                currentMessageData.child(Objects.requireNonNull(getRef(position)
                                         .getKey())).child("state").setValue("3");
                             }
 
@@ -612,8 +602,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                 messageViewHolder.itemView,
                                 currentUid,
                                 messages.getFrom(),
-                                messages.getMessage(),
-                                messages.getDelete());
+                                messages.getMessage());
 
                         if (selectedItems.containsKey(position)){
                             selectMsg(messageViewHolder.itemView);
@@ -621,10 +610,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                         }
 
                         messageViewHolder.itemView.setOnLongClickListener(v -> {
-
-                            if (!messages.getDelete().equals("null")){
-                                return false;
-                            }
 
                             selectedItems.put(position, selectedItemsModel);
                             message_bar.setVisibility(View.INVISIBLE);
@@ -653,10 +638,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             }
 
                             if (messages.getState().equals("0")){
-                                return;
-                            }
-
-                            if (!messages.getDelete().equals("null")){
                                 return;
                             }
 
@@ -724,13 +705,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
         reply_message.setText(message);
 
-        message_reply_close.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                message_container.setBackground(getDrawable(R.drawable.message_background));
-                message_reply_container.setVisibility(View.GONE);
-                isReply = false;
-            }
+        message_reply_close.setOnClickListener(v -> {
+            message_container.setBackground(getDrawable(R.drawable.message_background));
+            message_reply_container.setVisibility(View.GONE);
+            isReply = false;
         });
 
         replyMsg = messageAdapter.getItem(position).getMessage();
@@ -870,8 +848,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         super.onPause();
 
         handler.removeCallbacks(runnable);
-
-        messageData.child(currentUid).setValue(true);
 
         messageAdapter.stopListening();
 

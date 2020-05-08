@@ -18,44 +18,24 @@ public class SelectedItemsModel {
     }
 
     private String message;
-    private String delete;
     private String chatUid;
-
-    public String getMessageNode() {
-        return messageNode;
-    }
-
-    public void setMessageNode(String messageNode) {
-        this.messageNode = messageNode;
-    }
-
-    private String messageNode;
-
-    public String getDelete() {
-        return delete;
-    }
-
-    public void setDelete(String delete) {
-        this.delete = delete;
-    }
 
     public SelectedItemsModel() {
     }
 
-    public SelectedItemsModel(int position , View view , String chatUid ,  String messageNode) {
+    public SelectedItemsModel(int position , View view , String chatUid) {
         this.position = position;
         this.view = view;
         this.chatUid = chatUid;
-        this.messageNode = messageNode;
+
     }
 
-    public SelectedItemsModel(int position, View view, String currentUid, String fromUid, String message , String delete) {
+    public SelectedItemsModel(int position, View view, String currentUid, String fromUid, String message) {
         this.position = position;
         this.view = view;
         this.currentUid = currentUid;
         this.fromUid = fromUid;
         this.message = message;
-        this.delete = delete;
     }
 
     public int getPosition() {
