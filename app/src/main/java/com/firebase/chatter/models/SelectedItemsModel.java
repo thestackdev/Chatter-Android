@@ -8,6 +8,15 @@ public class SelectedItemsModel {
     private View view;
     private String currentUid;
     private String fromUid;
+    private String times;
+
+    public String getTimes() {
+        return times;
+    }
+
+    public void setTimes(String times) {
+        this.times = times;
+    }
 
     public String getChatUid() {
         return chatUid;
@@ -30,12 +39,13 @@ public class SelectedItemsModel {
 
     }
 
-    public SelectedItemsModel(int position, View view, String currentUid, String fromUid, String message) {
+    public SelectedItemsModel(int position, View view, String currentUid, String fromUid, String message , String times) {
         this.position = position;
         this.view = view;
         this.currentUid = currentUid;
         this.fromUid = fromUid;
         this.message = message;
+        this.times = times;
     }
 
     public int getPosition() {

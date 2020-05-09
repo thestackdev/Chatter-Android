@@ -505,8 +505,11 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                             builder.setPositiveButton("Delete For EveryOne", (dialog, which) -> {
                                 for(int items : selectedItems.keySet()) {
+
                                     getRef(items).removeValue().addOnSuccessListener(aVoid -> { });
+                                    userMessageData.child(getRef(items).getKey()).removeValue();
                                     deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+
                                 }
                                 message_selected_bar.setVisibility(View.INVISIBLE);
                                 message_bar.setVisibility(View.VISIBLE);
@@ -516,7 +519,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             builder.setNegativeButton("Delete For Me" , ((dialog, which) -> {
                                 for(int items : selectedItems.keySet()) {
 
-                                        getRef(items).removeValue().addOnSuccessListener(aVoid -> {});
+                                    getRef(items).removeValue().addOnSuccessListener(aVoid -> {});
 
                                     deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
                                 }
@@ -656,7 +659,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                 messageViewHolder.itemView,
                                 currentUid,
                                 messages.getFrom(),
-                                messages.getMessage());
+                                messages.getMessage(),
+                                messages.getTimes());
 
                         if (selectedItems.containsKey(position)){
                             selectMsg(messageViewHolder.itemView);
