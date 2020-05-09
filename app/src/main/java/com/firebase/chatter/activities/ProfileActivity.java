@@ -381,9 +381,9 @@ public class ProfileActivity extends AppCompatActivity {
 
         Map addChatMap = new HashMap();
 
-
         addChatMap.put("seen", false);
         addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
+        addChatMap.put("watching" , false);
 
         Map chatUserMap = new HashMap();
         chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);

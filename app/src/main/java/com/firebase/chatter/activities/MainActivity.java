@@ -32,6 +32,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 
+import java.util.Objects;
+
 import a.gautham.library.AppUpdater;
 import a.gautham.library.helper.Display;
 
@@ -52,11 +54,16 @@ public class MainActivity extends AppCompatActivity {
         setUpUiViews();
 
         if (firebaseUser != null) {
-            String current_user_id = firebaseAuth.getCurrentUser().getUid();
+
+            String current_user_id = Objects.requireNonNull(firebaseAuth.getCurrentUser()).getUid();
             databaseReference = FirebaseDatabase.getInstance().getReference().child("Users").child(current_user_id);
+
         } else {
             sendToLoginActivity();
         }
+
+        databaseReference.child("online").setValue("true");
+        databaseReference.child("online").onDisconnect().setValue(ServerValue.TIMESTAMP);
 
         AppUpdater appUpdater = new AppUpdater(this);
         appUpdater.setDisplay(Display.DIALOG);
@@ -189,35 +196,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if(firebaseUser != null) {
-            String userID = firebaseUser.getUid();
-            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
-                    .child("Users").child(userID).child("online");
-            databaseReference.setValue("true").addOnSuccessListener(new OnSuccessListener<Void>() {
-                @Override
-                public void onSuccess(Void aVoid) {
-
-                }
-            });
-        }
-
+        databaseReference.child("online").setValue("true").addOnSuccessListener(aVoid -> {
+        });
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if(firebaseUser != null) {
-            String userID = firebaseUser.getUid();
-            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
-                    .child("Users").child(userID).child("online");
-            databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
-                @Override
-                public void onSuccess(Void aVoid) {
-
-                }
-            });
-        }
+        databaseReference.child("online").setValue(ServerValue.TIMESTAMP);
     }
 }

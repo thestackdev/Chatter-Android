@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -39,6 +40,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.firebase.chatter.FirebaseMessagingService;
 import com.firebase.chatter.R;
 import com.firebase.chatter.helper.AppAccents;
 import com.firebase.chatter.helper.GetTimeAgo;
@@ -73,10 +75,13 @@ import de.hdodenhof.circleimageview.CircleImageView;
 import hani.momanii.supernova_emoji_library.Actions.EmojIconActions;
 import hani.momanii.supernova_emoji_library.Helper.EmojiconEditText;
 
+import static a.gautham.library.helper.Helper.isNetworkAvailable;
+
 public class MessageActivity extends AppCompatActivity implements RecyclerItemTouchHelperListener {
 
     private DatabaseReference currentMessageData;
     private DatabaseReference userMessageData;
+    private DatabaseReference notificationData;
 
     Handler handler = new Handler();
     Runnable runnable;
@@ -171,10 +176,13 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
         if (!TextUtils.isEmpty(message)) {
 
+            final String key = currentMessageData.push().getKey();
+            final String currentTime = dateFormat.format(new Date());
+
             final String ourMessageRef = "messages/" + currentUid + "/" + chatUserId;
             final String chatMessageRef = "messages/" + chatUserId + "/" + currentUid;
 
-            final String key = currentMessageData.push().getKey();
+            String notificationRoute = "Notifications/" + key;
 
             final Map<String, String> MessageMap = new HashMap<>();
 
@@ -182,7 +190,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             MessageMap.put("type", "text");
             MessageMap.put("from", currentUid);
             MessageMap.put("state", "0");
-            MessageMap.put("times" , dateFormat.format(new Date()) + ",null,null");
 
             if (isReply && !replyMsg.equals("") && !replyName.equals("")){
                 MessageMap.put("reply_message",replyMsg);
@@ -198,17 +205,49 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             }
 
 
+
             Map<String, Object> messageMap = new HashMap<>();
             messageMap.put(ourMessageRef + "/" + key, MessageMap);
             messageMap.put(chatMessageRef + "/" + key, MessageMap);
 
             messageInput.setText("");
 
-            rootDatabase.updateChildren(messageMap , (databaseError, databaseReference) -> {
-                if (databaseError == null) {
-                    rootDatabase.child("Chat").child(chatUserId).child(currentUid).child("seen").setValue(false);
-                    rootDatabase.child("Chat").child(chatUserId).child(currentUid).child("timeStamp").setValue(ServerValue.TIMESTAMP);
-                    currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+            userChatRef.child("watching").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if(!(boolean)dataSnapshot.getValue()) {
+
+                        Map notificationMap = new HashMap();
+                        notificationMap.put("from", currentUid);
+                        notificationMap.put("to", chatUserId);
+                        notificationMap.put("message", message);
+                        notificationMap.put("times" , currentTime + ",null,null");
+                        MessageMap.put("times" , currentTime + ",null,null");
+
+                        messageMap.put(notificationRoute , notificationMap);
+
+                        rootDatabase.updateChildren(messageMap , (databaseError, databaseReference) -> {
+                            if (databaseError == null) {
+                                userChatRef.child("seen").setValue(false);
+                                userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                                currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                            }
+                        });
+                    } else {
+                        MessageMap.put("times" , currentTime + "," + currentTime +",null");
+                        rootDatabase.updateChildren(messageMap , (databaseError, databaseReference) -> {
+                            if (databaseError == null) {
+                                userChatRef.child("seen").setValue(false);
+                                userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                                currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                            }
+                        });
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
                 }
             });
         }
@@ -216,6 +255,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
     @Override
     protected void onResume() {
+
+        currentChatRef.child("watching").setValue(true);
 
         handler.postDelayed(runnable = () -> {
             handler.postDelayed(runnable , 2000);
@@ -370,7 +411,9 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
         currentMessageData = rootDatabase.child("messages").child(currentUid).child(chatUserId);
 
-        userMessageData = rootDatabase.child("messages").child(currentUid).child(chatUserId);
+        userMessageData = rootDatabase.child("messages").child(chatUserId).child(currentUid);
+
+        notificationData = rootDatabase.child("Notifications");
 
     }
 
@@ -434,11 +477,15 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                     protected void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, final int position, @NonNull final Messages messages) {
 
                         String state = messages.getState();
-                        final String times = messages.getTimes();
 
-                        String[] split = times.split("," , 3);
 
-                        split[2] = dateFormat.format(new Date());
+
+                        try {
+                            final String times = messages.getTimes();
+                            String[] split = times.split("," , 3);
+
+                            split[2] = dateFormat.format(new Date());
+
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
@@ -531,17 +578,17 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                         }
 
                         if (messages.getFrom().equals(currentUid)) {
-
-                            System.out.println(currentUid);
-
                             if(messages.getState().equals("0")) {
 
+                                if (isNetworkAvailable(getApplicationContext())) {
                                     currentMessageData.child(Objects.requireNonNull(getRef(position).getKey()))
                                             .child("state").setValue("1").addOnSuccessListener(aVoid -> {
-                                            });
-
+                                    });
+                                    userMessageData.child(Objects.requireNonNull(getRef(position).getKey()))
+                                            .child("state").setValue("1").addOnSuccessListener(aVoid -> {
+                                    });
+                                }
                             }
-
 
                             messageViewHolder.messageLayout.setGravity(Gravity.END);
                             messageViewHolder.message_time.setGravity(Gravity.END);
@@ -574,15 +621,18 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         } else if (messages.getFrom().equals(chatUserId)) {
 
-                            if(state.equals("2")) {
+                            if(state.equals("1") || state.equals("2")) {
 
                                 userMessageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
                                         .setValue(split[0] +","+ split[1] +","+split[2]);
                                 currentMessageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
                                         .setValue(split[0] +","+ split[1] +","+split[2]);
 
+                                userMessageData.child(Objects.requireNonNull(getRef(position)
+                                        .getKey())).child("state").setValue("3");
                                 currentMessageData.child(Objects.requireNonNull(getRef(position)
                                         .getKey())).child("state").setValue("3");
+
                             }
 
                             messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
@@ -595,6 +645,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                             messageViewHolder.message_time.setText(split[0]);
 
+                        }
+
+                        } catch (NullPointerException e) {
+                            e.printStackTrace();
                         }
 
                         final SelectedItemsModel selectedItemsModel = new SelectedItemsModel(
@@ -655,8 +709,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                         super.onChildChanged(type, snapshot, newIndex, oldIndex);
 
                         if(newIndex > oldIndex) {
+
                             currentChatRef.child("seen").setValue(true);
                             messageRecyclerView.smoothScrollToPosition(newIndex);
+
                             notifyDataSetChanged();
                         }
                     }
@@ -845,6 +901,9 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
     @Override
     protected void onPause() {
+
+        currentChatRef.child("watching").setValue(false);
+
         super.onPause();
 
         handler.removeCallbacks(runnable);
@@ -862,15 +921,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         }
     }
 
-    public boolean isInternetAvailable() {
-        try {
-            InetAddress ipAdress = InetAddress.getByName("google.com");
-            //You can replace it with your name
-            return !ipAdress.equals("");
-
-        } catch (Exception e) {
-            return false;
-        }
+    public boolean isNetworkAvailable(Context context) {
+        ConnectivityManager connectivityManager = ((ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
+        assert connectivityManager != null;
+        return connectivityManager.getActiveNetworkInfo() != null && connectivityManager.getActiveNetworkInfo().isConnected();
     }
 
 }

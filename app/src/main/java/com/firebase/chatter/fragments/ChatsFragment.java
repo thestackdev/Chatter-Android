@@ -154,8 +154,8 @@ public class ChatsFragment extends Fragment {
                     @Override
                     public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
 
-                        final String name = Objects.requireNonNull(dataSnapshot.child("name").getValue()).toString();
-                        final String thumbnail = Objects.requireNonNull(dataSnapshot.child("thumbnail").getValue()).toString();
+                        final String name = dataSnapshot.child("name").getValue().toString();
+                        final String thumbnail = dataSnapshot.child("thumbnail").getValue().toString();
 
                         chatsViewHolder.name.setText(name);
 
@@ -232,39 +232,46 @@ public class ChatsFragment extends Fragment {
 
                                 for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
 
-                                    chatsViewHolder.message.setText(childSnapshot.child("message").getValue().toString());
+                                    try {
 
-                                    String times = childSnapshot.child("times").getValue().toString();
+                                        chatsViewHolder.message.setText(childSnapshot.child("message").getValue().toString());
 
-                                    String[] split = times.split(",", 2);
+                                        String times = childSnapshot.child("times").getValue().toString();
 
-                                    chatsViewHolder.time.setText(split[0]);
+                                        String[] split = times.split(",", 2);
 
-                                    String from = childSnapshot.child("from").getValue().toString();
+                                        chatsViewHolder.time.setText(split[0]);
 
-                                    if (!from.equals(key)) {
-                                        String state = childSnapshot.child("state").getValue().toString();
+                                        String from = childSnapshot.child("from").getValue().toString();
 
-                                        switch (state) {
-                                            case "3":
-                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
-                                                break;
-                                            case "2":
-                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
+                                        if (!from.equals(key)) {
+                                            String state = childSnapshot.child("state").getValue().toString();
 
-                                                break;
-                                            case "1":
-                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+                                            switch (state) {
+                                                case "3":
+                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                                    break;
+                                                case "2":
+                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
 
-                                                break;
-                                            default:
-                                                chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
-                                                break;
+                                                    break;
+                                                case "1":
+                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+
+                                                    break;
+                                                default:
+                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+                                                    break;
+                                            }
+
+                                        } else {
+                                            chatsViewHolder.stamp.setVisibility(View.GONE);
                                         }
 
-                                    } else {
-                                        chatsViewHolder.stamp.setVisibility(View.GONE);
+                                    } catch (NullPointerException e) {
+                                        e.printStackTrace();
                                     }
+
                                 }
                             }
 
