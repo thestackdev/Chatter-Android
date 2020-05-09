@@ -57,6 +57,7 @@ public class ChatsFragment extends Fragment {
     private DatabaseReference messageData;
     private DatabaseReference chatRef;
     private DatabaseReference userChatRef;
+    private DatabaseReference rootData;
 
     private String current_Uid;
 
@@ -72,7 +73,7 @@ public class ChatsFragment extends Fragment {
 
         initUI(view);
 
-        DatabaseReference rootData = FirebaseDatabase.getInstance().getReference();
+        rootData = FirebaseDatabase.getInstance().getReference();
         current_Uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
 
         messageData = rootData.child("messages").child(current_Uid);
@@ -292,10 +293,18 @@ public class ChatsFragment extends Fragment {
                         builder.setPositiveButton("Delete For Me", (dialog, which) -> {
 
                             for(int keys : selectedItems.keySet()) {
+                                try {
 
-                                String uid = selectedItems.get(keys).getChatUid();
+                                    getRef(Objects.requireNonNull(selectedItems.get(keys)).getPosition()).removeValue();
+                                    messageData.child(selectedItems.get(keys).getChatUid()).removeValue();
 
-                            }
+                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(keys)));
+
+                                } catch (NullPointerException e) {
+                                    e.printStackTrace();
+                                }
+
+                            } selectedItems.clear();
 
                             chat_bar_layout.setVisibility(View.GONE);
 
@@ -304,7 +313,19 @@ public class ChatsFragment extends Fragment {
                         builder.setNegativeButton("Delete For EveryOne", (dialog, which) -> {
 
                             for(int keys : selectedItems.keySet()) {
+                                try {
 
+                                    getRef(selectedItems.get(keys).getPosition()).removeValue();
+                                    userChatRef.child(selectedItems.get(keys).getChatUid()).removeValue();
+
+                                    messageData.child(selectedItems.get(keys).getChatUid()).removeValue();
+                                    rootData.child("messages").child(selectedItems.get(keys).getChatUid())
+                                            .child(current_Uid).removeValue();
+
+
+                                }catch (NullPointerException e) {
+                                    e.printStackTrace();
+                                }
                             }
 
                             selectedItems.clear();

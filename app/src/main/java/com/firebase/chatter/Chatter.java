@@ -32,7 +32,7 @@ public class Chatter extends Application {
         Picasso.setSingletonInstance(built);
 
 
-     /*   FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
+        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
 
         if(firebaseAuth.getCurrentUser() != null) {
 
@@ -57,8 +57,7 @@ public class Chatter extends Application {
                 }
             });
 
-
-    } */
+        }
     }
 
 

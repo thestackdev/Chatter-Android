@@ -146,7 +146,24 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
         });
 
-        btnSend.setOnClickListener(v -> sendMessage());
+        btnSend.setOnClickListener(v -> {
+                    userChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if (!dataSnapshot.exists()) {
+                                createChatPage(currentUid, chatUserId);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+
+                    sendMessage();
+                }
+        );
 
         final RelativeLayout rootView = findViewById(R.id.root);
 
@@ -172,91 +189,115 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
     private void sendMessage() {
 
-        final String message = messageInput.getText().toString();
+        try {
 
-        if (!TextUtils.isEmpty(message)) {
+            final String message = messageInput.getText().toString();
 
-            final String key = currentMessageData.push().getKey();
-            final String currentTime = dateFormat.format(new Date());
+            if (!TextUtils.isEmpty(message)) {
 
-            final String ourMessageRef = "messages/" + currentUid + "/" + chatUserId;
-            final String chatMessageRef = "messages/" + chatUserId + "/" + currentUid;
+                final String key = currentMessageData.push().getKey();
+                final String currentTime = dateFormat.format(new Date());
 
-            String notificationRoute = "Notifications/" + key;
+                final String ourMessageRef = "messages/" + currentUid + "/" + chatUserId;
+                final String chatMessageRef = "messages/" + chatUserId + "/" + currentUid;
 
-            final Map<String, String> MessageMap = new HashMap<>();
+                String notificationRoute = "Notifications/" + key;
 
-            MessageMap.put("message", message);
-            MessageMap.put("type", "text");
-            MessageMap.put("from", currentUid);
-            MessageMap.put("state", "0");
+                final Map<String, String> MessageMap = new HashMap<>();
 
-            if (isReply && !replyMsg.equals("") && !replyName.equals("")){
-                MessageMap.put("reply_message",replyMsg);
-                MessageMap.put("reply_username",replyName);
-                isReply = false;
-                message_reply_container.setVisibility(View.GONE);
-                message_container.setBackground(getDrawable(R.drawable.message_background));
+                MessageMap.put("message", message);
+                MessageMap.put("type", "text");
+                MessageMap.put("from", currentUid);
+                MessageMap.put("state", "0");
 
-            } else {
+                if (isReply && !replyMsg.equals("") && !replyName.equals("")) {
+                    MessageMap.put("reply_message", replyMsg);
+                    MessageMap.put("reply_username", replyName);
+                    isReply = false;
+                    message_reply_container.setVisibility(View.GONE);
+                    message_container.setBackground(getDrawable(R.drawable.message_background));
 
-                MessageMap.put("reply_message","null");
-                MessageMap.put("reply_username","null");
-            }
+                } else {
+
+                    MessageMap.put("reply_message", "null");
+                    MessageMap.put("reply_username", "null");
+                }
 
 
+                Map<String, Object> messageMap = new HashMap<>();
+                messageMap.put(ourMessageRef + "/" + key, MessageMap);
+                messageMap.put(chatMessageRef + "/" + key, MessageMap);
 
-            Map<String, Object> messageMap = new HashMap<>();
-            messageMap.put(ourMessageRef + "/" + key, MessageMap);
-            messageMap.put(chatMessageRef + "/" + key, MessageMap);
+                messageInput.setText("");
 
-            messageInput.setText("");
+                userChatRef.child("watching").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-            userChatRef.child("watching").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    if(!(boolean)dataSnapshot.getValue()) {
+                        if(dataSnapshot.exists()) {
 
-                        Map notificationMap = new HashMap();
-                        notificationMap.put("from", currentUid);
-                        notificationMap.put("to", chatUserId);
-                        notificationMap.put("message", message);
-                        notificationMap.put("times" , currentTime + ",null,null");
-                        MessageMap.put("times" , currentTime + ",null,null");
+                            if (!(boolean) dataSnapshot.getValue()) {
 
-                        messageMap.put(notificationRoute , notificationMap);
+                                Map notificationMap = new HashMap();
+                                notificationMap.put("from", currentUid);
+                                notificationMap.put("to", chatUserId);
+                                notificationMap.put("message", message);
+                                notificationMap.put("times", currentTime + ",null,null");
+                                MessageMap.put("times", currentTime + ",null,null");
 
-                        rootDatabase.updateChildren(messageMap , (databaseError, databaseReference) -> {
-                            if (databaseError == null) {
-                                userChatRef.child("seen").setValue(false);
-                                userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
-                                currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                                messageMap.put(notificationRoute, notificationMap);
+
+                                rootDatabase.updateChildren(messageMap, (databaseError, databaseReference) -> {
+                                    if (databaseError == null) {
+                                        userChatRef.child("seen").setValue(false);
+                                        userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                                        currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                                    }
+                                });
+                            } else {
+                                MessageMap.put("times", currentTime + "," + currentTime + ",null");
+                                rootDatabase.updateChildren(messageMap, (databaseError, databaseReference) -> {
+                                    if (databaseError == null) {
+                                        userChatRef.child("seen").setValue(false);
+                                        userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                                        currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
+                                    }
+                                });
                             }
-                        });
-                    } else {
-                        MessageMap.put("times" , currentTime + "," + currentTime +",null");
-                        rootDatabase.updateChildren(messageMap , (databaseError, databaseReference) -> {
-                            if (databaseError == null) {
-                                userChatRef.child("seen").setValue(false);
-                                userChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
-                                currentChatRef.child("timeStamp").setValue(ServerValue.TIMESTAMP);
-                            }
-                        });
+                        } else {
+                            Toast.makeText(MessageActivity.this , "SomeThing Went Wrong" , Toast.LENGTH_SHORT).show();
+                        }
                     }
-                }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                }
-            });
+                    }
+                });
+            }
+        } catch (NullPointerException e) {
+            e.printStackTrace();
         }
     }
 
     @Override
     protected void onResume() {
 
-        currentChatRef.child("watching").setValue(true);
+        currentChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()) {
+
+                    currentChatRef.child("watching").setValue(true);
+                    currentChatRef.child("watching").onDisconnect().setValue(false);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
 
         handler.postDelayed(runnable = () -> {
             handler.postDelayed(runnable , 2000);
@@ -296,6 +337,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
         setFirebaseAdapter(presentIndex);
 
+        btnSend.setVisibility(View.GONE);
+
         messageInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -304,6 +347,9 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+
+                lastSeen.setText("typing");
 
                 camera.setVisibility(View.GONE);
                 camera.animate().translationY(0);
@@ -317,6 +363,11 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             @Override
             public void afterTextChanged(Editable s) {
 
+                if(s.toString().trim().length() > 0) {
+                    btnSend.setVisibility(View.VISIBLE);
+                } else {
+                    btnSend.setVisibility(View.GONE);
+                }
             }
         });
 
@@ -478,8 +529,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         String state = messages.getState();
 
-
-
                         try {
                             final String times = messages.getTimes();
                             String[] split = times.split("," , 3);
@@ -626,15 +675,31 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                             if(state.equals("1") || state.equals("2")) {
 
-                                userMessageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
-                                        .setValue(split[0] +","+ split[1] +","+split[2]);
-                                currentMessageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
-                                        .setValue(split[0] +","+ split[1] +","+split[2]);
+                                userChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                        if(dataSnapshot.exists()) {
 
-                                userMessageData.child(Objects.requireNonNull(getRef(position)
-                                        .getKey())).child("state").setValue("3");
+                                            userMessageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
+                                                    .setValue(split[0] +","+ split[1] +","+split[2]);
+
+                                            userMessageData.child(Objects.requireNonNull(getRef(position)
+                                                    .getKey())).child("state").setValue("3");
+
+
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                    }
+                                });
+
                                 currentMessageData.child(Objects.requireNonNull(getRef(position)
                                         .getKey())).child("state").setValue("3");
+                                currentMessageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
+                                        .setValue(split[0] +","+ split[1] +","+split[2]);
 
                             }
 
@@ -651,6 +716,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                         }
 
                         } catch (NullPointerException e) {
+                            finish();
                             e.printStackTrace();
                         }
 
@@ -714,7 +780,20 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         if(newIndex > oldIndex) {
 
-                            currentChatRef.child("seen").setValue(true);
+                            userChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                    if(dataSnapshot.exists()) {
+                                        currentChatRef.child("seen").setValue(true);
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                }
+                            });
+
                             messageRecyclerView.smoothScrollToPosition(newIndex);
 
                             notifyDataSetChanged();
@@ -906,7 +985,22 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     @Override
     protected void onPause() {
 
-        currentChatRef.child("watching").setValue(false);
+        currentChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()) {
+                    currentChatRef.child("watching").setValue(false);
+                } else {
+                    finish();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
 
         super.onPause();
 
@@ -929,6 +1023,25 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         ConnectivityManager connectivityManager = ((ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
         assert connectivityManager != null;
         return connectivityManager.getActiveNetworkInfo() != null && connectivityManager.getActiveNetworkInfo().isConnected();
+    }
+
+    private void createChatPage(final String current_uid, final String profile_user_id) {
+
+        Map addChatMap = new HashMap();
+
+        addChatMap.put("seen", false);
+        addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
+        addChatMap.put("watching", false);
+
+        Map chatUserMap = new HashMap();
+
+        chatUserMap.put("Chat/" + profile_user_id + "/" + current_uid, addChatMap);
+        chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);
+
+
+        rootDatabase.updateChildren(chatUserMap, (databaseError, databaseReference) -> {
+
+        });
     }
 
 }
