@@ -5,9 +5,9 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
-import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,7 +15,6 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -33,6 +32,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -530,6 +530,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
+                            messageViewHolder.replied_message_tv.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
                         }
 
                         messageViewHolder.message_time.setVisibility(View.GONE);
@@ -622,6 +623,25 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         }
 
+                        messageViewHolder.message.setText(messages.getMessage());
+                        messageViewHolder.message_time.setVisibility(View.VISIBLE);
+                        messageViewHolder.message_time.setText(split[0]);
+
+                            int maxw = messageViewHolder.message.getMaxWidth();
+
+                            Paint textPaint = messageViewHolder.message.getPaint();
+                            float width = textPaint.measureText(messages.getMessage());
+
+                            if (!messages.getReply_message().equals("null")){
+                                messageViewHolder.layout_bg.setOrientation(LinearLayout.VERTICAL);
+                            }else {
+                                if (width >= maxw){
+                                    messageViewHolder.layout_bg.setOrientation(LinearLayout.VERTICAL);
+                                }else {
+                                    messageViewHolder.layout_bg.setOrientation(LinearLayout.HORIZONTAL);
+                                }
+                            }
+
                         if (messages.getFrom().equals(currentUid)) {
                             if(messages.getState() == 0 && isNetworkAvailable(getApplicationContext())) {
                                 messageData.child(Objects.requireNonNull(getRef(position).getKey()))
@@ -629,28 +649,34 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                 });
                             }
 
-                            messageViewHolder.messageLayout.setGravity(Gravity.END);
+                            LinearLayout.LayoutParams params = new
+                                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.MATCH_PARENT);
+                            params.gravity = Gravity.END;
+                            messageViewHolder.layout_bg.setLayoutParams(params);
+
                             messageViewHolder.message_time.setGravity(Gravity.END);
 
-                            messageViewHolder.message.setText(messages.getMessage());
+                            if (!appAccents.getAccentColor().equals("#9ab7d3")){
+                                Drawable bg_right = DrawableCompat.wrap(Objects.requireNonNull(getDrawable(R.drawable.background_right)));
+                                DrawableCompat.setTint(bg_right,Color.parseColor(appAccents.getAccentColor()));
+                                messageViewHolder.layout_bg.setBackground(bg_right);
+                            }
 
-                            Drawable bg_right = DrawableCompat.wrap(Objects.requireNonNull(getDrawable(R.drawable.background_right)));
+                            messageViewHolder.layout_bg.setBackground(
+                                    ContextCompat.getDrawable(getApplicationContext(),R.drawable.background_right));
 
-                            DrawableCompat.setTint(bg_right,Color.parseColor(appAccents.getAccentColor()));
-                            messageViewHolder.layout_bg.setBackground(bg_right);
                             messageViewHolder.stamp.setVisibility(View.VISIBLE);
-                            messageViewHolder.message_time.setText(split[0]);
-                            messageViewHolder.message.setText(messages.getMessage());
 
                                 switch (messages.getState()) {
                                     case 3:
-                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_green);
+                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
                                         break;
                                     case 2:
                                         messageViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
                                         break;
                                     case 1:
-                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_blue);
+                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
                                         break;
                                     default:
                                         messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_message_pending);
@@ -687,12 +713,12 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
                             messageViewHolder.stamp.setVisibility(View.GONE);
 
-                            messageViewHolder.messageLayout.setGravity(Gravity.START);
+                            LinearLayout.LayoutParams params = new
+                                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.MATCH_PARENT);
+                            params.gravity = Gravity.START;
+                            messageViewHolder.layout_bg.setLayoutParams(params);
                             messageViewHolder.message_time.setGravity(Gravity.START);
-
-                            messageViewHolder.message.setText(messages.getMessage());
-
-                            messageViewHolder.message_time.setText(split[0]);
 
                         }
 
