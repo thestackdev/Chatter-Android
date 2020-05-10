@@ -57,13 +57,14 @@ public class MainActivity extends AppCompatActivity {
 
             String current_user_id = Objects.requireNonNull(firebaseAuth.getCurrentUser()).getUid();
             databaseReference = FirebaseDatabase.getInstance().getReference().child("Users").child(current_user_id);
+            databaseReference.child("online").setValue("true");
+            databaseReference.child("online").onDisconnect().setValue(ServerValue.TIMESTAMP);
 
         } else {
             sendToLoginActivity();
         }
 
-        databaseReference.child("online").setValue("true");
-        databaseReference.child("online").onDisconnect().setValue(ServerValue.TIMESTAMP);
+
 
         AppUpdater appUpdater = new AppUpdater(this);
         appUpdater.setDisplay(Display.DIALOG);

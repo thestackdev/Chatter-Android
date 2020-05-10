@@ -29,6 +29,7 @@ import com.firebase.chatter.activities.ProfileActivity;
 import com.firebase.chatter.models.Chat;
 import com.firebase.chatter.models.Messages;
 import com.firebase.chatter.models.SelectedItemsModel;
+import com.firebase.chatter.models.Users;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -76,7 +77,7 @@ public class ChatsFragment extends Fragment {
         rootData = FirebaseDatabase.getInstance().getReference();
         current_Uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
 
-        messageData = rootData.child("messages").child(current_Uid);
+        messageData = rootData.child("messages");
         usersData = rootData.child("Users");
         chatRef = rootData.child("Chat").child(current_Uid);
         userChatRef = rootData.child("Chat");
@@ -143,7 +144,8 @@ public class ChatsFragment extends Fragment {
                 final SelectedItemsModel selectedItemsModel = new SelectedItemsModel(
                         position,
                         chatsViewHolder.itemView,
-                        getRef(position).getKey());
+                        getRef(position).getKey(),
+                        chat.getMessageNode());
 
                 if(!chat.isSeen()) {
                     chatsViewHolder.message.setTypeface(Typeface.DEFAULT_BOLD);
@@ -155,13 +157,12 @@ public class ChatsFragment extends Fragment {
                     @Override
                     public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
 
-                        final String name = dataSnapshot.child("name").getValue().toString();
-                        final String thumbnail = dataSnapshot.child("thumbnail").getValue().toString();
+                        Users users = dataSnapshot.getValue(Users.class);
 
-                        chatsViewHolder.name.setText(name);
+                        chatsViewHolder.name.setText(users.getName());
 
-                        if (!thumbnail.equals("default")) {
-                            Picasso.get().load(thumbnail).networkPolicy(NetworkPolicy.OFFLINE)
+                        if (!users.getThumbnail().equals("default")) {
+                            Picasso.get().load(users.getThumbnail()).networkPolicy(NetworkPolicy.OFFLINE)
                                     .placeholder(R.drawable.avatar).into(chatsViewHolder.userImage, new Callback() {
                                 @Override
                                 public void onSuccess() {
@@ -169,18 +170,16 @@ public class ChatsFragment extends Fragment {
 
                                 @Override
                                 public void onError(Exception e) {
-                                    Picasso.get().load(thumbnail).placeholder(R.drawable.avatar).into(chatsViewHolder.userImage);
+                                    Picasso.get().load(users.getThumbnail()).placeholder(R.drawable.avatar).into(chatsViewHolder.userImage);
 
                                 }
                             });
                         }
 
-                        final String image = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
-
                         chatsViewHolder.userImage.setOnClickListener(v -> {
 
-                            if (!thumbnail.equals("default")) {
-                                Uri imageUri = Uri.parse(image);
+                            if (!users.getThumbnail().equals("default")) {
+                                Uri imageUri = Uri.parse(users.getImage());
                                 Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
                                 intent.setData(imageUri);
                                 startActivity(intent);
@@ -211,9 +210,8 @@ public class ChatsFragment extends Fragment {
 
                             Intent intent = new Intent(v.getContext(), MessageActivity.class);
                             intent.putExtra("profile_user_id", key);
-                            intent.putExtra("userName", name);
-                            intent.putExtra("thumbnail", thumbnail);
-                            intent.putExtra("image", image);
+                            intent.putExtra("messageNode" , chat.getMessageNode());
+                            intent.putExtra("users" , users);
                             startActivity(intent);
 
                         });
@@ -226,62 +224,61 @@ public class ChatsFragment extends Fragment {
                     }
                 });
 
-                messageData.child(getRef(position).getKey()).orderByKey().limitToLast(1)
-                        .addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(chat.getMessageNode() != null) {
+                    messageData.child(chat.getMessageNode()).limitToLast(1)
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                                for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
+                                    for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
 
-                                    try {
+                                        try {
 
-                                        chatsViewHolder.message.setText(childSnapshot.child("message").getValue().toString());
+                                            Messages messages = childSnapshot.getValue(Messages.class);
 
-                                        String times = childSnapshot.child("times").getValue().toString();
+                                            chatsViewHolder.message.setText(messages.getMessage());
 
-                                        String[] split = times.split(",", 2);
+                                            String times = messages.getTimes();
 
-                                        chatsViewHolder.time.setText(split[0]);
+                                            String[] split = times.split(",", 2);
 
-                                        String from = childSnapshot.child("from").getValue().toString();
+                                            chatsViewHolder.time.setText(split[0]);
 
-                                        if (!from.equals(key)) {
-                                            String state = childSnapshot.child("state").getValue().toString();
+                                            if (!messages.getFrom().equals(key)) {
 
-                                            switch (state) {
-                                                case "3":
-                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
-                                                    break;
-                                                case "2":
-                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
+                                                switch (messages.getState()) {
+                                                    case 3:
+                                                        chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                                        break;
+                                                    case 2:
+                                                        chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
 
-                                                    break;
-                                                case "1":
-                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+                                                        break;
+                                                    case 1:
+                                                        chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
 
-                                                    break;
-                                                default:
-                                                    chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
-                                                    break;
+                                                        break;
+                                                    default:
+                                                        chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+                                                        break;
+                                                }
+
+                                            } else {
+                                                chatsViewHolder.stamp.setVisibility(View.GONE);
                                             }
 
-                                        } else {
-                                            chatsViewHolder.stamp.setVisibility(View.GONE);
+                                        } catch (NullPointerException e) {
+                                            e.printStackTrace();
                                         }
 
-                                    } catch (NullPointerException e) {
-                                        e.printStackTrace();
                                     }
-
                                 }
-                            }
 
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError databaseError) { }
+                            });
+                }
 
 
                 chat_selected_delete.setOnClickListener(v -> {
@@ -293,10 +290,28 @@ public class ChatsFragment extends Fragment {
                         builder.setPositiveButton("Delete For Me", (dialog, which) -> {
 
                             for(int keys : selectedItems.keySet()) {
-                                try {
 
-                                    getRef(Objects.requireNonNull(selectedItems.get(keys)).getPosition()).removeValue();
-                                    messageData.child(selectedItems.get(keys).getChatUid()).removeValue();
+                                try {
+                                    String messageNode = selectedItems.get(keys).getMessageNode();
+
+                                    messageData.child(messageNode).addListenerForSingleValueEvent(new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                    for(DataSnapshot children : dataSnapshot.getChildren()) {
+
+                                                        messageData.child(messageNode).child(children.getKey())
+                                                                .child("delete").setValue(current_Uid);
+
+                                                    }
+                                                }
+
+                                                @Override
+                                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                                }
+                                            });
+
+                                  //  notifyDataSetChanged();
 
                                     deSelectMsg(Objects.requireNonNull(selectedItems.get(keys)));
 
@@ -313,14 +328,13 @@ public class ChatsFragment extends Fragment {
                         builder.setNegativeButton("Delete For EveryOne", (dialog, which) -> {
 
                             for(int keys : selectedItems.keySet()) {
+
                                 try {
 
                                     getRef(selectedItems.get(keys).getPosition()).removeValue();
                                     userChatRef.child(selectedItems.get(keys).getChatUid()).removeValue();
 
-                                    messageData.child(selectedItems.get(keys).getChatUid()).removeValue();
-                                    rootData.child("messages").child(selectedItems.get(keys).getChatUid())
-                                            .child(current_Uid).removeValue();
+                                    messageData.child(selectedItems.get(keys).getMessageNode()).removeValue();
 
 
                                 }catch (NullPointerException e) {

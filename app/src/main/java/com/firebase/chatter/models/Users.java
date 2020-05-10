@@ -1,10 +1,23 @@
 package com.firebase.chatter.models;
 
-public class Users {
+import java.io.Serializable;
+
+public class Users implements Serializable {
+
     private String name;
     private String status;
     private String thumbnail;
     private String image;
+    private String device_token;
+
+    public String getDevice_token() {
+        return device_token;
+    }
+
+    public void setDevice_token(String device_token) {
+        this.device_token = device_token;
+    }
+
 
     public String getImage() {
         return image;

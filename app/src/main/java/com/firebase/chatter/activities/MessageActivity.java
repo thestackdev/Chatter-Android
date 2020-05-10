@@ -40,14 +40,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.firebase.chatter.FirebaseMessagingService;
 import com.firebase.chatter.R;
 import com.firebase.chatter.helper.AppAccents;
 import com.firebase.chatter.helper.GetTimeAgo;
 import com.firebase.chatter.helper.RecyclerItemTouchHelper;
 import com.firebase.chatter.helper.RecyclerItemTouchHelperListener;
+import com.firebase.chatter.models.Chat;
 import com.firebase.chatter.models.Messages;
 import com.firebase.chatter.models.SelectedItemsModel;
+import com.firebase.chatter.models.Users;
 import com.firebase.ui.common.ChangeEventType;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
@@ -63,7 +64,6 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
 
-import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -79,9 +79,13 @@ import static a.gautham.library.helper.Helper.isNetworkAvailable;
 
 public class MessageActivity extends AppCompatActivity implements RecyclerItemTouchHelperListener {
 
-    private DatabaseReference currentMessageData;
-    private DatabaseReference userMessageData;
+    private DatabaseReference messageData;
     private DatabaseReference notificationData;
+
+    private String messageNode;
+
+    private Chat chat;
+    private Users users;
 
     Handler handler = new Handler();
     Runnable runnable;
@@ -115,7 +119,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     private AppAccents appAccents;
     private RelativeLayout message_reply_container;
     private TextView reply_username, reply_message;
-    private String userName, copiedMessages = "", replyMsg = "", replyName = "";
+    private String copiedMessages = "", replyMsg = "", replyName = "";
     private boolean isReply = false;
 
     @Override
@@ -127,12 +131,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         setUpReferences();
         setUpChatUser();
 
-        back_btn_msg_selected.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onBackPressed();
-            }
-        });
+        back_btn_msg_selected.setOnClickListener(v -> onBackPressed());
 
         back_btn.setOnClickListener(v -> onBackPressed());
 
@@ -195,20 +194,18 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
             if (!TextUtils.isEmpty(message)) {
 
-                final String key = currentMessageData.push().getKey();
+                final String key = messageData.push().getKey();
                 final String currentTime = dateFormat.format(new Date());
-
-                final String ourMessageRef = "messages/" + currentUid + "/" + chatUserId;
-                final String chatMessageRef = "messages/" + chatUserId + "/" + currentUid;
 
                 String notificationRoute = "Notifications/" + key;
 
-                final Map<String, String> MessageMap = new HashMap<>();
+                final Map<Object, Object> MessageMap = new HashMap<>();
 
                 MessageMap.put("message", message);
                 MessageMap.put("type", "text");
                 MessageMap.put("from", currentUid);
-                MessageMap.put("state", "0");
+                MessageMap.put("state", 0);
+                MessageMap.put("delete" , "null");
 
                 if (isReply && !replyMsg.equals("") && !replyName.equals("")) {
                     MessageMap.put("reply_message", replyMsg);
@@ -225,26 +222,30 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
 
                 Map<String, Object> messageMap = new HashMap<>();
-                messageMap.put(ourMessageRef + "/" + key, MessageMap);
-                messageMap.put(chatMessageRef + "/" + key, MessageMap);
+                messageMap.put("messages/" + messageNode + "/" + key, MessageMap);
 
                 messageInput.setText("");
 
-                userChatRef.child("watching").addListenerForSingleValueEvent(new ValueEventListener() {
+                userChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
                         if(dataSnapshot.exists()) {
 
-                            if (!(boolean) dataSnapshot.getValue()) {
+                        chat = dataSnapshot.getValue(Chat.class);
 
-                                Map notificationMap = new HashMap();
+                        int unSeen = chat.getUnSeen();
+
+                            userChatRef.child("unSeen").setValue(++unSeen).addOnSuccessListener(aVoid -> { });
+
+                            if (!chat.getWatching()) {
+
+                                Map<String, String> notificationMap = new HashMap<>();
                                 notificationMap.put("from", currentUid);
                                 notificationMap.put("to", chatUserId);
                                 notificationMap.put("message", message);
                                 notificationMap.put("times", currentTime + ",null,null");
                                 MessageMap.put("times", currentTime + ",null,null");
-
                                 messageMap.put(notificationRoute, notificationMap);
 
                                 rootDatabase.updateChildren(messageMap, (databaseError, databaseReference) -> {
@@ -283,11 +284,14 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     @Override
     protected void onResume() {
 
+        lastSeen.setText("Fetching...");
+
         currentChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()) {
 
+                    currentChatRef.child("unSeen").setValue(0);
                     currentChatRef.child("watching").setValue(true);
                     currentChatRef.child("watching").onDisconnect().setValue(false);
                 }
@@ -323,15 +327,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             });
         }, 2000);
 
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if(firebaseUser != null) {
-            String userID = firebaseUser.getUid();
-            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
-                    .child("Users").child(userID).child("online");
-            databaseReference.setValue("true").addOnSuccessListener(aVoid -> {
-
-            });
-        }
+            usersData.child(currentUid).child("online").setValue("true").addOnSuccessListener(aVoid -> {});
 
         super.onResume();
 
@@ -347,9 +343,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-
-                lastSeen.setText("typing");
 
                 camera.setVisibility(View.GONE);
                 camera.animate().translationY(0);
@@ -374,6 +367,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
     }
 
     private void setUpUiViews() {
+
+        users = (Users) getIntent().getSerializableExtra("users");
 
         back_btn = findViewById(R.id.back_btn);
         user_image = findViewById(R.id.user_image);
@@ -460,9 +455,9 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
         userChatRef = chatRef.child(chatUserId).child(currentUid);
 
-        currentMessageData = rootDatabase.child("messages").child(currentUid).child(chatUserId);
+        messageNode = getIntent().getStringExtra("messageNode");
 
-        userMessageData = rootDatabase.child("messages").child(chatUserId).child(currentUid);
+        messageData = rootDatabase.child("messages").child(messageNode);
 
         notificationData = rootDatabase.child("Notifications");
 
@@ -470,17 +465,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
     private void setUpChatUser() {
 
-        final String thumbnail = getIntent().getStringExtra("thumbnail");
+        user_name.setText(users.getName());
 
-        final String image = getIntent().getStringExtra("image");
-
-        userName = getIntent().getStringExtra("userName");
-
-        user_name.setText(userName);
-
-        assert thumbnail != null;
-        if (!thumbnail.equals("default")) {
-            Picasso.get().load(thumbnail).networkPolicy(NetworkPolicy.OFFLINE)
+        if (!users.getThumbnail().equals("default")) {
+            Picasso.get().load(users.getThumbnail()).networkPolicy(NetworkPolicy.OFFLINE)
                     .placeholder(R.drawable.avatar).into(user_image, new Callback() {
                 @Override
                 public void onSuccess() {
@@ -488,15 +476,15 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                 @Override
                 public void onError(Exception e) {
-                    Picasso.get().load(thumbnail).placeholder(R.drawable.avatar).into(user_image);
+                    Picasso.get().load(users.getThumbnail()).placeholder(R.drawable.avatar).into(user_image);
 
                 }
             });
         }
 
         user_image.setOnClickListener(v -> {
-            if (!thumbnail.equals("default")) {
-                Uri imageUri = Uri.parse(image);
+            if (!users.getThumbnail().equals("default")) {
+                Uri imageUri = Uri.parse(users.getImage());
                 Intent intent = new Intent(v.getContext(), FullScreenImageView.class);
                 intent.setData(imageUri);
                 startActivity(intent);
@@ -512,7 +500,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         // Firebase Content
 
                 messagesFirebaseRecyclerOptions = new FirebaseRecyclerOptions.Builder<Messages>()
-                        .setQuery(currentMessageData.limitToLast(presentIndex) , Messages.class).build();
+                        .setQuery(messageData.limitToLast(presentIndex) , Messages.class).build();
 
 
                 messageAdapter = new FirebaseRecyclerAdapter<Messages, MessageViewHolder>(messagesFirebaseRecyclerOptions) {
@@ -527,9 +515,13 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                     @Override
                     protected void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, final int position, @NonNull final Messages messages) {
 
-                        String state = messages.getState();
-
                         try {
+
+                            if(messages.getDelete() != null && messages.getDelete().equals(currentUid)) {
+                                messageViewHolder.itemView.setVisibility(View.GONE);
+                                messageViewHolder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0 , 0));
+                            }
+
                             final String times = messages.getTimes();
                             String[] split = times.split("," , 3);
 
@@ -556,7 +548,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                                 for(int items : selectedItems.keySet()) {
 
                                     getRef(items).removeValue().addOnSuccessListener(aVoid -> { });
-                                    userMessageData.child(getRef(items).getKey()).removeValue();
+                                    messageData.child(getRef(items).getKey()).removeValue();
                                     deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
 
                                 }
@@ -568,9 +560,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             builder.setNegativeButton("Delete For Me" , ((dialog, which) -> {
                                 for(int items : selectedItems.keySet()) {
 
-                                    getRef(items).removeValue().addOnSuccessListener(aVoid -> {});
+                                    getRef(items).child("delete").setValue(currentUid).addOnSuccessListener(aVoid -> {});
 
                                     deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+
                                 }
 
                                 message_selected_bar.setVisibility(View.INVISIBLE);
@@ -630,16 +623,10 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                         }
 
                         if (messages.getFrom().equals(currentUid)) {
-                            if(messages.getState().equals("0")) {
-
-                                if (isNetworkAvailable(getApplicationContext())) {
-                                    currentMessageData.child(Objects.requireNonNull(getRef(position).getKey()))
-                                            .child("state").setValue("1").addOnSuccessListener(aVoid -> {
-                                    });
-                                    userMessageData.child(Objects.requireNonNull(getRef(position).getKey()))
-                                            .child("state").setValue("1").addOnSuccessListener(aVoid -> {
-                                    });
-                                }
+                            if(messages.getState() == 0 && isNetworkAvailable(getApplicationContext())) {
+                                messageData.child(Objects.requireNonNull(getRef(position).getKey()))
+                                        .child("state").setValue(1).addOnSuccessListener(aVoid -> {
+                                });
                             }
 
                             messageViewHolder.messageLayout.setGravity(Gravity.END);
@@ -655,14 +642,14 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                             messageViewHolder.message_time.setText(split[0]);
                             messageViewHolder.message.setText(messages.getMessage());
 
-                                switch (state) {
-                                    case "3":
+                                switch (messages.getState()) {
+                                    case 3:
                                         messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_green);
                                         break;
-                                    case "2":
+                                    case 2:
                                         messageViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
                                         break;
-                                    case "1":
+                                    case 1:
                                         messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_tick_blue);
                                         break;
                                     default:
@@ -673,19 +660,18 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         } else if (messages.getFrom().equals(chatUserId)) {
 
-                            if(state.equals("1") || state.equals("2")) {
+                            if(messages.getState() == 2) {
 
                                 userChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                         if(dataSnapshot.exists()) {
 
-                                            userMessageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
+                                            messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
                                                     .setValue(split[0] +","+ split[1] +","+split[2]);
 
-                                            userMessageData.child(Objects.requireNonNull(getRef(position)
+                                            messageData.child(Objects.requireNonNull(getRef(position)
                                                     .getKey())).child("state").setValue("3");
-
 
                                         }
                                     }
@@ -695,11 +681,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                                     }
                                 });
-
-                                currentMessageData.child(Objects.requireNonNull(getRef(position)
-                                        .getKey())).child("state").setValue("3");
-                                currentMessageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
-                                        .setValue(split[0] +","+ split[1] +","+split[2]);
 
                             }
 
@@ -761,7 +742,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                             }
 
-                            if (messages.getState().equals("0")){
+                            if (messages.getState() == 0){
                                 return;
                             }
 
@@ -839,7 +820,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         if (from.equals(currentUid)){
             reply_username.setText(R.string.you);
         }else {
-            reply_username.setText(userName);
+            reply_username.setText(users.getName());
         }
 
         reply_message.setText(message);
@@ -854,7 +835,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         if (messageAdapter.getItem(position).getFrom().equals(currentUid))
             replyName = "You";
         else
-            replyName = userName;
+            replyName = users.getName();
 
     }
 
@@ -1019,21 +1000,17 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         }
     }
 
-    public boolean isNetworkAvailable(Context context) {
-        ConnectivityManager connectivityManager = ((ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
-        assert connectivityManager != null;
-        return connectivityManager.getActiveNetworkInfo() != null && connectivityManager.getActiveNetworkInfo().isConnected();
-    }
-
     private void createChatPage(final String current_uid, final String profile_user_id) {
 
-        Map addChatMap = new HashMap();
+        Map<String, Object> addChatMap = new HashMap<>();
 
         addChatMap.put("seen", false);
         addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
-        addChatMap.put("watching", false);
+        addChatMap.put("watching" , false);
+        addChatMap.put("unSeen" , 0);
+        addChatMap.put("messageNode" , messageNode);
 
-        Map chatUserMap = new HashMap();
+        Map<String, Object> chatUserMap = new HashMap<>();
 
         chatUserMap.put("Chat/" + profile_user_id + "/" + current_uid, addChatMap);
         chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);

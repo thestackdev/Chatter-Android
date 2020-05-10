@@ -1,9 +1,39 @@
 package com.firebase.chatter.models;
 
-public class Chat {
+import java.io.Serializable;
 
-    public boolean seen;
-    public String messageNode;
+public class Chat implements Serializable {
+
+    private boolean seen;
+    private String messageNode;
+    private long timeStamp;
+    private boolean watching;
+
+    public int getUnSeen() {
+        return unSeen;
+    }
+
+    public void setUnSeen(int unSeen) {
+        this.unSeen = unSeen;
+    }
+
+    private int unSeen;
+
+    public long getTimeStamp() {
+        return timeStamp;
+    }
+
+    public void setTimeStamp(long timeStamp) {
+        this.timeStamp = timeStamp;
+    }
+
+    public boolean getWatching() {
+        return watching;
+    }
+
+    public void setWatching(boolean watching) {
+        this.watching = watching;
+    }
 
     public String getMessageNode() {
         return messageNode;

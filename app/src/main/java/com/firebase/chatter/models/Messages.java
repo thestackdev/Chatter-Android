@@ -5,10 +5,19 @@ public class Messages {
     private String message;
     private String type;
     private String from;
-    private String state;
+    private int state;
     private String times;
     private String reply_message;
     private String reply_username;
+    private String delete;
+
+    public String getDelete() {
+        return delete;
+    }
+
+    public void setDelete(String delete) {
+        this.delete = delete;
+    }
 
     public String getTimes() {
         return times;
@@ -18,11 +27,11 @@ public class Messages {
         this.times = times;
     }
 
-    public String getState() {
+    public int getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(int state) {
         this.state = state;
     }
 

@@ -10,6 +10,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,6 +19,8 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.firebase.chatter.R;
 import com.firebase.chatter.helper.AppAccents;
+import com.firebase.chatter.models.Chat;
+import com.firebase.chatter.models.Users;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -43,7 +46,6 @@ public class ProfileActivity extends AppCompatActivity {
 
     // profile user details
     private String profile_user_id;
-    private String userName , userThumbnail , userStatus , userImage;
 
     private Button btn1, btn2, btn3;
     private TextView profile_name, profile_status;
@@ -51,6 +53,8 @@ public class ProfileActivity extends AppCompatActivity {
     private String current_uid;
     private String current_state;
     private ImageView profileImage;
+
+    private Users users;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,18 +124,13 @@ public class ProfileActivity extends AppCompatActivity {
         profileUserData.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                userName = Objects.requireNonNull(dataSnapshot.child("name").getValue()).toString();
-                profile_name.setText(userName);
+                users = dataSnapshot.getValue(Users.class);
 
-                userStatus = Objects.requireNonNull(dataSnapshot.child("status").getValue()).toString();
-                profile_status.setText(userStatus);
+                profile_name.setText(users.getName());
+                profile_status.setText(users.getStatus());
 
-                userThumbnail = Objects.requireNonNull(dataSnapshot.child("thumbnail").getValue()).toString();
-
-                userImage = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
-
-                if (!userThumbnail.equals("default")) {
-                    Picasso.get().load(userThumbnail).networkPolicy(NetworkPolicy.OFFLINE)
+                if (!users.getThumbnail().equals("default")) {
+                    Picasso.get().load(users.getThumbnail()).networkPolicy(NetworkPolicy.OFFLINE)
                             .placeholder(R.drawable.avatar).into(profileImage, new Callback() {
                         @Override
                         public void onSuccess() {
@@ -139,7 +138,7 @@ public class ProfileActivity extends AppCompatActivity {
 
                         @Override
                         public void onError(Exception e) {
-                            Picasso.get().load(userThumbnail).placeholder(R.drawable.avatar).into(profileImage);
+                            Picasso.get().load(users.getThumbnail()).placeholder(R.drawable.avatar).into(profileImage);
 
                         }
                     });
@@ -218,42 +217,33 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
 
-        btn1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                btn1.setEnabled(false);
-                if (current_state.equals("not_friends")) {
-                    Map request_map = new HashMap();
-                    request_map.put("Friend_req/" + current_uid + "/" + profile_user_id + "/req_type", "sent");
-                    request_map.put("Friend_req/" + profile_user_id + "/" + current_uid + "/req_type", "received");
-                    rootDatabase.updateChildren(request_map, new DatabaseReference.CompletionListener() {
-                        @Override
-                        public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                            if (databaseError == null) {
-                                current_state = "req_sent";
-                                btn1.setText("Cancel friend Request");
-                            }
-                            btn1.setEnabled(true);
-                        }
-                    });
-                } else if (current_state.equals("req_sent")) {
-                    frq_database.child(current_uid).child(profile_user_id).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            if (task.isSuccessful()) {
-                                frq_database.child(profile_user_id).child(current_uid).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
-                                    @Override
-                                    public void onSuccess(Void aVoid) {
-                                        current_state = "not_friends";
-                                        btn1.setText("Send Friend Request");
-                                        btn1.setEnabled(true);
-                                    }
-                                });
+        btn1.setOnClickListener(v -> {
+            btn1.setEnabled(false);
+            if (current_state.equals("not_friends")) {
 
-                            }
-                        }
-                    });
-                }
+                Map<String, Object> request_map = new HashMap<>();
+
+                request_map.put("Friend_req/" + current_uid + "/" + profile_user_id + "/req_type", "sent");
+                request_map.put("Friend_req/" + profile_user_id + "/" + current_uid + "/req_type", "received");
+
+                rootDatabase.updateChildren(request_map, (databaseError, databaseReference) -> {
+                    if (databaseError == null) {
+                        current_state = "req_sent";
+                        btn1.setText("Cancel friend Request");
+                    }
+                    btn1.setEnabled(true);
+                });
+            } else if (current_state.equals("req_sent")) {
+                frq_database.child(current_uid).child(profile_user_id).removeValue().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        frq_database.child(profile_user_id).child(current_uid).removeValue().addOnSuccessListener(aVoid -> {
+                            current_state = "not_friends";
+                            btn1.setText("Send Friend Request");
+                            btn1.setEnabled(true);
+                        });
+
+                    }
+                });
             }
         });
         btn2.setOnClickListener(v -> {
@@ -262,27 +252,24 @@ public class ProfileActivity extends AppCompatActivity {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         final String date = DateFormat.getDateTimeInstance().format(new Date());
-                        Map friendsMap = new HashMap();
+                        Map<String, Object> friendsMap = new HashMap<>();
                         friendsMap.put("Friends/"+current_uid+"/"+profile_user_id+"/date",date);
                         friendsMap.put("Friends/"+profile_user_id+"/"+current_uid+"/date",date);
 
                         friendsMap.put("Friend_req/"+current_uid+"/"+profile_user_id,null);
                         friendsMap.put("Friend_req/"+profile_user_id+"/"+current_uid,null);
 
-                        rootDatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
-                            @Override
-                            public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                                if(databaseError == null) {
-                                    current_state = "friends";
-                                    btn2.setVisibility(View.VISIBLE);
-                                    btn2.setText("UNFRIEND");
-                                    btn3.setEnabled(true);
-                                    btn3.setVisibility(View.VISIBLE);
-                                    btn3.setText("Message");
-                                    btn2.setEnabled(true);
-                                    btn1.setVisibility(View.INVISIBLE);
-                                    btn1.setEnabled(false);
-                                }
+                        rootDatabase.updateChildren(friendsMap, (databaseError, databaseReference) -> {
+                            if(databaseError == null) {
+                                current_state = "friends";
+                                btn2.setVisibility(View.VISIBLE);
+                                btn2.setText("UNFRIEND");
+                                btn3.setEnabled(true);
+                                btn3.setVisibility(View.VISIBLE);
+                                btn3.setText("Message");
+                                btn2.setEnabled(true);
+                                btn1.setVisibility(View.INVISIBLE);
+                                btn1.setEnabled(false);
                             }
                         });
                     }
@@ -293,23 +280,20 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 });
             } else if (current_state.equals("friends")) {
-                Map friendsMap = new HashMap();
+                Map<String, Object> friendsMap = new HashMap<>();
                 friendsMap.put("Friends/"+current_uid+"/"+profile_user_id, null);
                 friendsMap.put("Friends/"+profile_user_id+"/"+current_uid, null);
 
-                rootDatabase.updateChildren(friendsMap, new DatabaseReference.CompletionListener() {
-                    @Override
-                    public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                        if(databaseError == null) {
-                            current_state = "not_friends";
-                            btn2.setVisibility(View.INVISIBLE);
-                            btn3.setEnabled(false);
-                            btn3.setVisibility(View.INVISIBLE);
-                            btn2.setEnabled(false);
-                            btn1.setText("Send Friend Request");
-                            btn1.setVisibility(View.VISIBLE);
-                            btn1.setEnabled(true);
-                        }
+                rootDatabase.updateChildren(friendsMap, (databaseError, databaseReference) -> {
+                    if(databaseError == null) {
+                        current_state = "not_friends";
+                        btn2.setVisibility(View.INVISIBLE);
+                        btn3.setEnabled(false);
+                        btn3.setVisibility(View.INVISIBLE);
+                        btn2.setEnabled(false);
+                        btn1.setText("Send Friend Request");
+                        btn1.setVisibility(View.VISIBLE);
+                        btn1.setEnabled(true);
                     }
                 });
 
@@ -324,8 +308,10 @@ public class ProfileActivity extends AppCompatActivity {
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         if (!dataSnapshot.hasChild(profile_user_id)) {
                             createChatPage(current_uid, profile_user_id);
+                            sendToChatActivity();
+                        } else {
+                            sendToChatActivity();
                         }
-                        sendToChatActivity();
                     }
 
                     @Override
@@ -338,7 +324,7 @@ public class ProfileActivity extends AppCompatActivity {
                 friends_database.child(current_uid).addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        Map friendsMap = new HashMap();
+                        Map<String, Object> friendsMap = new HashMap<>();
 
                         friendsMap.put("Friend_req/"+current_uid+"/"+profile_user_id,null);
                         friendsMap.put("Friend_req/"+profile_user_id+"/"+current_uid,null);
@@ -368,24 +354,28 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void sendToChatActivity() {
 
-        Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
+     /*   Intent intent = new Intent(ProfileActivity.this , MessageActivity.class);
         intent.putExtra("profile_user_id",profile_user_id);
-        intent.putExtra("userName",userName);
-        intent.putExtra("thumbnail" , userThumbnail);
-        intent.putExtra("image" , userImage);
+        intent.putExtra("users",users);
+        intent.putExtra("messageNode" , messageNode);
         startActivity(intent);
-        finish();
+        finish(); */
+
+        Toast.makeText(ProfileActivity.this , "W.I.P , Please check chats for your deserved Chat profile" , Toast.LENGTH_SHORT)
+                .show();
     }
 
     private void createChatPage(final String current_uid, final String profile_user_id) {
 
-        Map addChatMap = new HashMap();
+        Map<String, Object> addChatMap = new HashMap<>();
 
         addChatMap.put("seen", false);
         addChatMap.put("timeStamp", ServerValue.TIMESTAMP);
         addChatMap.put("watching" , false);
+        addChatMap.put("unSeen" , 0);
+        addChatMap.put("messageNode" , current_uid+profile_user_id);
 
-        Map chatUserMap = new HashMap();
+        Map<String, Object> chatUserMap = new HashMap<>();
         chatUserMap.put("Chat/" + current_uid + "/" + profile_user_id, addChatMap);
         chatUserMap.put("Chat/" + profile_user_id + "/" + current_uid, addChatMap);
 

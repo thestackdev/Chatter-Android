@@ -9,6 +9,7 @@ public class SelectedItemsModel {
     private String currentUid;
     private String fromUid;
     private String times;
+    private String messageNode;
 
     public String getTimes() {
         return times;
@@ -29,13 +30,22 @@ public class SelectedItemsModel {
     private String message;
     private String chatUid;
 
+    public String getMessageNode() {
+        return messageNode;
+    }
+
+    public void setMessageNode(String messageNode) {
+        this.messageNode = messageNode;
+    }
+
     public SelectedItemsModel() {
     }
 
-    public SelectedItemsModel(int position , View view , String chatUid) {
+    public SelectedItemsModel(int position , View view , String chatUid , String messageNode) {
         this.position = position;
         this.view = view;
         this.chatUid = chatUid;
+        this.messageNode = messageNode;
 
     }
 
