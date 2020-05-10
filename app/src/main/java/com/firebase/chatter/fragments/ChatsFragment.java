@@ -1,13 +1,11 @@
 package com.firebase.chatter.fragments;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +15,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -30,11 +27,10 @@ import com.firebase.chatter.models.Chat;
 import com.firebase.chatter.models.Messages;
 import com.firebase.chatter.models.SelectedItemsModel;
 import com.firebase.chatter.models.Users;
+import com.firebase.chatter.service.ChatsService;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -451,4 +447,9 @@ public class ChatsFragment extends Fragment {
 
     }
 
+    @Override
+    public void onPause() {
+        getActivity().startService(new Intent(getActivity(), ChatsService.class));
+        super.onPause();
+    }
 }
