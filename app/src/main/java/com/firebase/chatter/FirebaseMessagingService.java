@@ -50,7 +50,7 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
         super.onMessageReceived(remoteMessage);
         if (remoteMessage.getData().size() > 0) {
 
-            final String fromID = remoteMessage.getData().get("fromID");
+        /*    final String fromID = remoteMessage.getData().get("fromID");
             final String pushID = remoteMessage.getData().get("pushID");
             final String toID = remoteMessage.getData().get("toID");
             final String message = remoteMessage.getData().get("message");
@@ -147,6 +147,8 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
         if (notificationManager != null) {
             notificationManager.createNotificationChannel(adminChannel);
 
+        }
+    } */
         }
     }
 }
