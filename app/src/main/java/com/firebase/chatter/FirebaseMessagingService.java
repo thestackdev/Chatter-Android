@@ -41,9 +41,7 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
     private SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm aa", Locale.ENGLISH);
 
     private DatabaseReference messageData;
-    private DatabaseReference rootData;
     private DatabaseReference usersData;
-    private DatabaseReference chatData;
 
     private String uID;
 
@@ -57,66 +55,72 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
         super.onMessageReceived(remoteMessage);
 
         if (remoteMessage.getData().size() > 0) {
+            try {
+                DatabaseReference rootData = FirebaseDatabase.getInstance().getReference();
 
-            rootData = FirebaseDatabase.getInstance().getReference();
+                uID = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
 
-            uID = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
+                DatabaseReference chatData = rootData.child("Chat").child(uID);
 
-            chatData = rootData.child("Chat").child(uID);
+                messageData = rootData.child("messages");
 
-            messageData = rootData.child("messages");
+                usersData = rootData.child("Users");
 
-            usersData = rootData.child("Users");
+                notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                assert notificationManager != null;
+                notificationManager.cancelAll();
 
-            notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            assert notificationManager != null;
-            notificationManager.cancelAll();
+                final String pushID = remoteMessage.getData().get("pushID");
+                String times = remoteMessage.getData().get("times");
+                String messageNode = remoteMessage.getData().get("messageID");
 
-            final String pushID = remoteMessage.getData().get("pushID");
-            String times = remoteMessage.getData().get("times");
-            String messageNode = remoteMessage.getData().get("messageID");
+                assert times != null;
+                String[] split = times.split(",", 3);
 
-            String[] split = times.split("," , 3);
+                assert messageNode != null;
+                assert pushID != null;
+                messageData.child(messageNode).child(pushID).child("state").setValue(2);
+                messageData.child(messageNode).child(pushID).child("times").setValue(split[0] + "," + dateFormat.format(new Date()) + ",null");
 
-            assert messageNode != null;
-            assert pushID != null;
-            messageData.child(messageNode).child(pushID).child("state").setValue(2);
-            messageData.child(messageNode).child(pushID).child("times").setValue(split[0]+","+dateFormat.format(new Date())+",null");
+                chatData.addListenerForSingleValueEvent(new ValueEventListener() {
 
-            chatData.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        for (DataSnapshot children : dataSnapshot.getChildren()) {
+                            Chat chat = children.getValue(Chat.class);
 
-                    for (DataSnapshot children : dataSnapshot.getChildren()) {
-                        Chat chat = children.getValue(Chat.class);
+                            String childKey = children.getKey();
 
-                        String childKey = children.getKey();
+                            assert chat != null;
+                            if (chat.getUnSeen() != 0) {
 
-                        assert chat != null;
-                        if (chat.getUnSeen() != 0) {
+                                assert childKey != null;
+                                usersData.child(childKey).addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                        Users users = dataSnapshot.getValue(Users.class);
+                                        sendNotificationToUser(chat.getUnSeen(), chat.getMessageNode(), users);
+                                    }
 
-                            usersData.child(childKey).addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                    Users users = dataSnapshot.getValue(Users.class);
-                                    sendNotificationToUser(chat.getUnSeen(), chat.getMessageNode() , users);
-                                }
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                }
-                            });
+                                    }
+                                });
+                            }
                         }
                     }
-                }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                }
-            });
+                    }
+                });
+
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -128,6 +132,7 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
                 for (DataSnapshot children : dataSnapshot.getChildren()) {
 
                     Messages messages = children.getValue(Messages.class);
+                    assert messages != null;
                     notifyUserWithNotification(users.getName() , messages.getFrom() , users.getImage() , users.getThumbnail() , messages.getMessage());
                 }
             }
