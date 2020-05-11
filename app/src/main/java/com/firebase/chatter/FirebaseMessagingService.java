@@ -58,13 +58,6 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
 
         if (remoteMessage.getData().size() > 0) {
 
-            notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            assert notificationManager != null;
-            notificationManager.cancelAll();
-
-            final String pushID = remoteMessage.getData().get("pushID");
-            String times = remoteMessage.getData().get("times");
-
             rootData = FirebaseDatabase.getInstance().getReference();
 
             uID = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
@@ -74,6 +67,21 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             messageData = rootData.child("messages");
 
             usersData = rootData.child("Users");
+
+            notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            assert notificationManager != null;
+            notificationManager.cancelAll();
+
+            final String pushID = remoteMessage.getData().get("pushID");
+            String times = remoteMessage.getData().get("times");
+            String messageNode = remoteMessage.getData().get("messageID");
+
+            String[] split = times.split("," , 3);
+
+            assert messageNode != null;
+            assert pushID != null;
+            messageData.child(messageNode).child(pushID).child("state").setValue(2);
+            messageData.child(messageNode).child(pushID).child("times").setValue(split[0]+","+dateFormat.format(new Date())+",null");
 
             chatData.addListenerForSingleValueEvent(new ValueEventListener() {
 

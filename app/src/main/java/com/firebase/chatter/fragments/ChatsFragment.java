@@ -8,6 +8,7 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +34,7 @@ import com.firebase.chatter.models.Users;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -220,59 +222,69 @@ public class ChatsFragment extends Fragment  {
                 });
 
                 if(chat.getMessageNode() != null) {
-                    messageData.child(chat.getMessageNode()).limitToLast(1)
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    messageData.child(chat.getMessageNode()).orderByKey().limitToLast(1).addChildEventListener(new ChildEventListener() {
+                        @Override
+                        public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                            try {
 
-                                    for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
+                                Messages messages = dataSnapshot.getValue(Messages.class);
 
-                                        try {
+                                chatsViewHolder.message.setText(messages.getMessage());
 
-                                            Messages messages = childSnapshot.getValue(Messages.class);
+                                String times = messages.getTimes();
 
-                                            chatsViewHolder.message.setText(messages.getMessage());
+                                String[] split = times.split(",", 2);
 
-                                            String times = messages.getTimes();
+                                chatsViewHolder.time.setText(split[0]);
 
-                                            String[] split = times.split(",", 2);
+                                if (!messages.getFrom().equals(key)) {
 
-                                            chatsViewHolder.time.setText(split[0]);
+                                    switch (messages.getState()) {
+                                        case 3:
+                                            chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                            break;
+                                        case 2:
+                                            chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
 
-                                            if (!messages.getFrom().equals(key)) {
+                                            break;
+                                        case 1:
+                                            chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
 
-                                                switch (messages.getState()) {
-                                                    case 3:
-                                                        chatsViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
-                                                        break;
-                                                    case 2:
-                                                        chatsViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
-
-                                                        break;
-                                                    case 1:
-                                                        chatsViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
-
-                                                        break;
-                                                    default:
-                                                        chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
-                                                        break;
-                                                }
-
-                                            } else {
-                                                chatsViewHolder.stamp.setVisibility(View.GONE);
-                                            }
-
-                                        } catch (NullPointerException e) {
-                                            e.printStackTrace();
-                                        }
-
+                                            break;
+                                        default:
+                                            chatsViewHolder.stamp.setBackgroundResource(R.drawable.timer_stamp);
+                                            break;
                                     }
+
+                                } else {
+                                    chatsViewHolder.stamp.setVisibility(View.GONE);
                                 }
 
+                            } catch (NullPointerException e) {
+                                e.printStackTrace();
+                            }
+                        }
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError databaseError) { }
-                            });
+                        @Override
+                        public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                        }
+
+                        @Override
+                        public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+                        }
+
+                        @Override
+                        public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
                 }
 
 

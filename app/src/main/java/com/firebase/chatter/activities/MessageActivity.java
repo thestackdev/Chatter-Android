@@ -40,6 +40,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.firebase.chatter.DetailsActivity;
 import com.firebase.chatter.R;
 import com.firebase.chatter.helper.AppAccents;
 import com.firebase.chatter.helper.GetTimeAgo;
@@ -80,7 +81,6 @@ import static a.gautham.library.helper.Helper.isNetworkAvailable;
 public class MessageActivity extends AppCompatActivity implements RecyclerItemTouchHelperListener {
 
     private DatabaseReference messageData;
-    private DatabaseReference notificationData;
 
     private String messageNode;
 
@@ -197,8 +197,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                 final String key = messageData.push().getKey();
                 final String currentTime = dateFormat.format(new Date());
 
-                String notificationRoute = "Notifications/" + key;
-
                 final Map<Object, Object> MessageMap = new HashMap<>();
 
                 MessageMap.put("message", message);
@@ -207,13 +205,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
                 MessageMap.put("state", 0);
                 MessageMap.put("delete" , "null");
                 MessageMap.put("times", currentTime + ",null,null");
-
-                Map<String, String> notificationMap = new HashMap<>();
-
-                notificationMap.put("messageNode" , messageNode);
-                notificationMap.put("times", currentTime + ",null,null");
-                notificationMap.put("pushID" , key);
-
 
                 if (isReply && !replyMsg.equals("") && !replyName.equals("")) {
                     MessageMap.put("reply_message", replyMsg);
@@ -231,7 +222,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                 Map<String, Object> messageMap = new HashMap<>();
                 messageMap.put("messages/" + messageNode + "/" + key, MessageMap);
-                messageMap.put(notificationRoute, notificationMap);
 
                 messageInput.setText("");
 
@@ -243,7 +233,8 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         chat = dataSnapshot.getValue(Chat.class);
 
-                        int unSeen = chat.getUnSeen();
+                            assert chat != null;
+                            int unSeen = chat.getUnSeen();
 
                             userChatRef.child("unSeen").setValue(++unSeen);
 
@@ -278,7 +269,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()) {
-                    currentChatRef.child("unSeen").setValue(0);
                     currentChatRef.child("watching").setValue(true);
                     currentChatRef.child("watching").onDisconnect().setValue(false);
                 }
@@ -291,7 +281,7 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
         });
 
         handler.postDelayed(runnable = () -> {
-            handler.postDelayed(runnable , 2000);
+            handler.postDelayed(runnable , 3000);
 
             usersData.child(chatUserId).child("online").addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
@@ -314,13 +304,11 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             });
         }, 2000);
 
-            usersData.child(currentUid).child("online").setValue("true").addOnSuccessListener(aVoid -> {});
+            usersData.child(currentUid).child("online").setValue("true");
 
         super.onResume();
 
         setFirebaseAdapter(presentIndex);
-
-        btnSend.setVisibility(View.GONE);
 
         messageInput.addTextChangedListener(new TextWatcher() {
             @Override
@@ -446,8 +434,6 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
         messageData = rootDatabase.child("messages").child(messageNode);
 
-        notificationData = rootDatabase.child("Notifications");
-
     }
 
     private void setUpChatUser() {
@@ -502,275 +488,67 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
             @Override
             protected void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, final int position, @NonNull final Messages messages) {
 
-                final String times = messages.getTimes();
-                String[] split = times.split(",", 3);
+                try {
 
-                if (messages.getFrom().equals(currentUid)) {
+                    final String times = messages.getTimes();
+                    String[] split = times.split(",", 3);
 
-                    if (messages.getDelete().equals(currentUid)) {
-                        messageViewHolder.itemView.setVisibility(View.GONE);
-                        messageViewHolder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
+                    if (messages.getFrom().equals(currentUid)) {
 
-                    } else {
-
-                        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                        params.gravity = Gravity.END;
-
-                        messageViewHolder.message.setText(messages.getMessage());
-
-                        messageViewHolder.layout_bg.setLayoutParams(params);
-                        messageViewHolder.message_time.setGravity(Gravity.END);
-                        messageViewHolder.message_time.setVisibility(View.GONE);
-
-                        if (!appAccents.getAccentColor().equals("#9ab7d3")) {
-                            Drawable bg_right = DrawableCompat.wrap(Objects.requireNonNull(getDrawable(R.drawable.background_right)));
-                            DrawableCompat.setTint(bg_right, Color.parseColor(appAccents.getAccentColor()));
-                            messageViewHolder.layout_bg.setBackground(bg_right);
-                        }
-
-                        messageViewHolder.layout_bg.setBackground(ContextCompat.getDrawable(getApplicationContext(), R.drawable.background_right));
-
-                        switch (messages.getState()) {
-                            case 3:
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
-                                break;
-                            case 2:
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
-                                break;
-                            case 1:
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
-                                break;
-                            default:
-                                messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_message_pending);
-                                break;
-                        }
-
-                    }
-
-                } else if (messages.getFrom().equals(chatUserId)) {
-
-                    if (messages.getState() == 2) {
-
-                        userChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                if (dataSnapshot.exists()) {
-
-                                    messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
-                                            .setValue(split[0] + "," + split[1] + "," + split[2]);
-
-                                    getRef(position).child("state").setValue(3);
-
-                                }
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                            }
-                        });
-                    }
-
-                    messageViewHolder.message.setText(messages.getMessage());
-                    messageViewHolder.message_time.setVisibility(View.GONE);
-                    messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
-                    messageViewHolder.stamp.setVisibility(View.GONE);
-
-                    LinearLayout.LayoutParams params = new
-                            LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
-                            LinearLayout.LayoutParams.MATCH_PARENT);
-                    params.gravity = Gravity.START;
-                    messageViewHolder.layout_bg.setLayoutParams(params);
-                    messageViewHolder.message_time.setGravity(Gravity.START);
-
-                }
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
-                            messageViewHolder.replied_message_tv.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
-                        }
-
-
-                        msg_selected_reply.setOnClickListener(v -> replyMessage(position));
-
-                        msg_selected_fav.setOnClickListener(v -> {
-                            //TODO
-                        });
-
-                        msg_selected_delete.setOnClickListener(v -> {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
-                            builder.setTitle("Are You Sure ?").setCancelable(false);
-
-                            builder.setPositiveButton("Delete For EveryOne", (dialog, which) -> {
-                                for (int items : selectedItems.keySet()) {
-
-                                    getRef(items).removeValue().addOnSuccessListener(aVoid -> {
-                                    });
-                                    messageData.child(getRef(items).getKey()).removeValue();
-                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
-
-                                }
-                                message_selected_bar.setVisibility(View.INVISIBLE);
-                                message_bar.setVisibility(View.VISIBLE);
-                                selectedItems.clear();
-                            });
-
-                            builder.setNegativeButton("Delete For Me", ((dialog, which) -> {
-                                for (int items : selectedItems.keySet()) {
-
-                                    getRef(items).child("delete").setValue(currentUid).addOnSuccessListener(aVoid -> {
-                                    });
-
-                                    notifyItemRemoved(selectedItems.get(items).getPosition());
-                                    notifyDataSetChanged();
-
-                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
-
-                                }
-
-                                message_selected_bar.setVisibility(View.INVISIBLE);
-                                message_bar.setVisibility(View.VISIBLE);
-                                selectedItems.clear();
-                            }));
-
-                            builder.setNeutralButton("Cancel", ((dialog, which) -> {
-                                dialog.dismiss();
-                            }));
-
-                            builder.create().show();
-                        });
-
-                        msg_selected_forward.setOnClickListener(v -> {
-                            //TODO
-                        });
-
-                        msg_selected_copy.setOnClickListener(v -> {
-
-                            for (int key : selectedItems.keySet()) {
-
-                                if (copiedMessages.equals("")) {
-                                    copiedMessages = String.format("%s", selectedItems.get(key).getMessage());
-                                } else {
-                                    copiedMessages = String.format("%s\n%s", copiedMessages, selectedItems.get(key).getMessage());
-                                }
-
-                                deSelectMsg(Objects.requireNonNull(selectedItems.get(key)).getView());
-                            }
-
-                            message_selected_bar.setVisibility(View.INVISIBLE);
-                            message_bar.setVisibility(View.VISIBLE);
-                            selectedItems.clear();
-
-
-                            copySelectedMessagesToClipBoard(copiedMessages);
-
-                        });
-
-                        if (Objects.requireNonNull(messages.getReply_message()).equals("null")) {
-
-                            messageViewHolder.replied_message_layout.setVisibility(View.GONE);
-                            messageViewHolder.replied_username_tv.setVisibility(View.GONE);
-                            messageViewHolder.replied_message_tv.setVisibility(View.GONE);
+                        if (messages.getDelete().equals(currentUid)) {
+                            messageViewHolder.itemView.setVisibility(View.GONE);
+                            messageViewHolder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
 
                         } else {
 
-                            messageViewHolder.replied_username_tv.setText(messages.getReply_username());
-                            messageViewHolder.replied_message_tv.setText(messages.getReply_message());
+                            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
+                            params.gravity = Gravity.END;
 
-                            messageViewHolder.replied_message_layout.setVisibility(View.VISIBLE);
-                            messageViewHolder.replied_username_tv.setVisibility(View.VISIBLE);
-                            messageViewHolder.replied_message_tv.setVisibility(View.VISIBLE);
+                            messageViewHolder.message.setText(messages.getMessage());
 
-                        }
+                            messageViewHolder.layout_bg.setLayoutParams(params);
+                            messageViewHolder.message_time.setGravity(Gravity.END);
+                            messageViewHolder.message_time.setVisibility(View.GONE);
 
-                        messageViewHolder.message.setText(messages.getMessage());
-                        messageViewHolder.message_time.setVisibility(View.VISIBLE);
-                        messageViewHolder.message_time.setText(split[0]);
+                            if (!appAccents.getAccentColor().equals("#9ab7d3")) {
+                                Drawable bg_right = DrawableCompat.wrap(Objects.requireNonNull(getDrawable(R.drawable.background_right)));
+                                DrawableCompat.setTint(bg_right, Color.parseColor(appAccents.getAccentColor()));
+                                messageViewHolder.layout_bg.setBackground(bg_right);
+                            }
 
-                        int maxw = messageViewHolder.message.getMaxWidth();
+                            messageViewHolder.layout_bg.setBackground(ContextCompat.getDrawable(getApplicationContext(), R.drawable.background_right));
 
-                        Paint textPaint = messageViewHolder.message.getPaint();
-                        float width = textPaint.measureText(messages.getMessage());
-
-                        if (!messages.getReply_message().equals("null")) {
-                            messageViewHolder.layout_bg.setOrientation(LinearLayout.VERTICAL);
-                        } else {
-                            if (width >= maxw) {
-                                messageViewHolder.layout_bg.setOrientation(LinearLayout.VERTICAL);
-                            } else {
-                                messageViewHolder.layout_bg.setOrientation(LinearLayout.HORIZONTAL);
+                            switch (messages.getState()) {
+                                case 3:
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                    break;
+                                case 2:
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
+                                    break;
+                                case 1:
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+                                    break;
+                                default:
+                                    messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_message_pending);
+                                    break;
                             }
 
                         }
 
+                    } else if (messages.getFrom().equals(chatUserId)) {
 
-
-            final SelectedItemsModel selectedItemsModel = new SelectedItemsModel(
-                    position,
-                    messageViewHolder.itemView,
-                    currentUid,
-                    messages.getFrom(),
-                    messages.getMessage(),
-                    messages.getTimes());
-
-                        if(selectedItems.containsKey(position))
-
-            {
-                selectMsg(messageViewHolder.itemView);
-                checkMsg(selectedItemsModel);
-            }
-
-                        messageViewHolder.itemView.setOnLongClickListener(v -> {
-
-                selectedItems.put(position, selectedItemsModel);
-                message_bar.setVisibility(View.INVISIBLE);
-                message_selected_bar.setVisibility(View.VISIBLE);
-                selectMsg(messageViewHolder.itemView);
-                checkMsg(selectedItemsModel);
-                return true;
-            });
-
-                        messageViewHolder.itemView.setOnClickListener(v -> {
-
-                if (selectedItems.size() > 0) {
-
-                    if (selectedItems.containsKey(position)) {
-                        selectedItems.remove(position);
-                        deSelectMsg(messageViewHolder.itemView);
-                        checkMsg(selectedItemsModel);
-                        return;
-                    }
-
-                    selectedItems.put(position, selectedItemsModel);
-                    selectMsg(messageViewHolder.itemView);
-                    checkMsg(selectedItemsModel);
-                    return;
-
-                }
-
-                if (messages.getState() == 0) {
-                    return;
-                }
-
-                if (messageViewHolder.message_time.getVisibility() == View.VISIBLE)
-                    messageViewHolder.message_time.setVisibility(View.GONE);
-                else
-                    messageViewHolder.message_time.setVisibility(View.VISIBLE);
-
-            });
-        }
-
-                    @Override
-                    public void onChildChanged(@NonNull ChangeEventType type, @NonNull DataSnapshot snapshot, int newIndex, int oldIndex) {
-                        super.onChildChanged(type, snapshot, newIndex, oldIndex);
-
-                        if(newIndex > oldIndex) {
+                        if (messages.getState() == 2) {
 
                             userChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                    if(dataSnapshot.exists()) {
-                                        currentChatRef.child("seen").setValue(true);
+                                    if (dataSnapshot.exists()) {
+
+                                        messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
+                                                .setValue(split[0] + "," + split[1] + "," + dateFormat.format(new Date()));
+
+                                        getRef(position).child("state").setValue(3);
+
                                     }
                                 }
 
@@ -779,18 +557,242 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                                 }
                             });
-
-                            messageRecyclerView.smoothScrollToPosition(newIndex);
-
-                            notifyDataSetChanged();
                         }
+
+                        messageViewHolder.message.setText(messages.getMessage());
+                        messageViewHolder.message_time.setVisibility(View.GONE);
+                        messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
+                        messageViewHolder.stamp.setVisibility(View.GONE);
+
+                        LinearLayout.LayoutParams params = new
+                                LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                                LinearLayout.LayoutParams.MATCH_PARENT);
+                        params.gravity = Gravity.START;
+                        messageViewHolder.layout_bg.setLayoutParams(params);
+                        messageViewHolder.message_time.setGravity(Gravity.START);
+
                     }
-                };
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
+                        messageViewHolder.replied_message_tv.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
+                    }
 
 
-                messageRecyclerView.setAdapter(messageAdapter);
+                    msg_selected_reply.setOnClickListener(v -> replyMessage(position));
+
+                    msg_selected_fav.setOnClickListener(v -> {
+                        //TODO
+                    });
+
+                    msg_selected_delete.setOnClickListener(v -> {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
+                        builder.setTitle("Are You Sure ?").setCancelable(false);
+
+                        builder.setPositiveButton("Delete For EveryOne", (dialog, which) -> {
+                            for (int items : selectedItems.keySet()) {
+
+                                getRef(items).removeValue();
+                                messageData.child(Objects.requireNonNull(getRef(items).getKey())).removeValue();
+                                deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+
+                            }
+                            message_selected_bar.setVisibility(View.INVISIBLE);
+                            message_bar.setVisibility(View.VISIBLE);
+                            selectedItems.clear();
+                        });
+
+                        builder.setNegativeButton("Delete For Me", ((dialog, which) -> {
+
+
+                            for (int items : selectedItems.keySet()) {
+
+                                getRef(items).child("delete").setValue(currentUid);
+
+                                notifyItemRemoved(Objects.requireNonNull(selectedItems.get(items)).getPosition());
+                                notifyDataSetChanged();
+
+                                deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+
+                            }
+
+                            message_selected_bar.setVisibility(View.INVISIBLE);
+                            message_bar.setVisibility(View.VISIBLE);
+                            selectedItems.clear();
+                        }));
+
+                        builder.setNeutralButton("Cancel", ((dialog, which) -> {
+                            dialog.dismiss();
+                        }));
+
+                        builder.create().show();
+                    });
+
+
+                    msg_selected_forward.setOnClickListener(v -> {
+                        //TODO
+                    });
+
+                    msg_selected_copy.setOnClickListener(v -> {
+
+                        for (int key : selectedItems.keySet()) {
+
+                            if (copiedMessages.equals("")) {
+                                copiedMessages = String.format("%s", selectedItems.get(key).getMessage());
+                            } else {
+                                copiedMessages = String.format("%s\n%s", copiedMessages, selectedItems.get(key).getMessage());
+                            }
+
+                            deSelectMsg(Objects.requireNonNull(selectedItems.get(key)).getView());
+                        }
+
+                        message_selected_bar.setVisibility(View.INVISIBLE);
+                        message_bar.setVisibility(View.VISIBLE);
+                        selectedItems.clear();
+
+
+                        copySelectedMessagesToClipBoard(copiedMessages);
+
+                    });
+
+                    if (Objects.requireNonNull(messages.getReply_message()).equals("null")) {
+
+                        messageViewHolder.replied_message_layout.setVisibility(View.GONE);
+                        messageViewHolder.replied_username_tv.setVisibility(View.GONE);
+                        messageViewHolder.replied_message_tv.setVisibility(View.GONE);
+
+                    } else {
+
+                        messageViewHolder.replied_username_tv.setText(messages.getReply_username());
+                        messageViewHolder.replied_message_tv.setText(messages.getReply_message());
+
+                        messageViewHolder.replied_message_layout.setVisibility(View.VISIBLE);
+                        messageViewHolder.replied_username_tv.setVisibility(View.VISIBLE);
+                        messageViewHolder.replied_message_tv.setVisibility(View.VISIBLE);
+
+                    }
+
+                    messageViewHolder.message.setText(messages.getMessage());
+                    messageViewHolder.message_time.setVisibility(View.VISIBLE);
+                    messageViewHolder.message_time.setText(split[0]);
+
+                    int maxw = messageViewHolder.message.getMaxWidth();
+
+                    Paint textPaint = messageViewHolder.message.getPaint();
+                    float width = textPaint.measureText(messages.getMessage());
+
+                    if (!messages.getReply_message().equals("null")) {
+                        messageViewHolder.layout_bg.setOrientation(LinearLayout.VERTICAL);
+                    } else {
+                        if (width >= maxw) {
+                            messageViewHolder.layout_bg.setOrientation(LinearLayout.VERTICAL);
+                        } else {
+                            messageViewHolder.layout_bg.setOrientation(LinearLayout.HORIZONTAL);
+                        }
+
+                    }
+
+
+                    final SelectedItemsModel selectedItemsModel = new SelectedItemsModel(
+                            position,
+                            messageViewHolder.itemView,
+                            currentUid,
+                            messages.getFrom(),
+                            messages.getMessage(),
+                            messages.getTimes());
+
+                    if (selectedItems.containsKey(position)) {
+                        selectMsg(messageViewHolder.itemView);
+                        checkMsg(selectedItemsModel);
+                    }
+
+                    messageViewHolder.itemView.setOnLongClickListener(v -> {
+
+                        selectedItems.put(position, selectedItemsModel);
+                        message_bar.setVisibility(View.INVISIBLE);
+                        message_selected_bar.setVisibility(View.VISIBLE);
+                        selectMsg(messageViewHolder.itemView);
+                        checkMsg(selectedItemsModel);
+                        return true;
+                    });
+
+                    msg_selected_details.setOnClickListener(v -> {
+
+                        Intent intent = new Intent(MessageActivity.this , DetailsActivity.class);
+                        intent.putExtra("details" , messages.getTimes());
+                        intent.putExtra("message" , messages.getMessage());
+                        startActivity(intent);
+
+                    });
+
+                    messageViewHolder.itemView.setOnClickListener(v -> {
+
+                        if (selectedItems.size() > 0) {
+
+                            if (selectedItems.containsKey(position)) {
+                                selectedItems.remove(position);
+                                deSelectMsg(messageViewHolder.itemView);
+                                checkMsg(selectedItemsModel);
+                                return;
+                            }
+
+                            selectedItems.put(position, selectedItemsModel);
+                            selectMsg(messageViewHolder.itemView);
+                            checkMsg(selectedItemsModel);
+                            return;
+
+                        }
+
+                        if (messages.getState() == 0) {
+                            return;
+                        }
+
+                        if (messageViewHolder.message_time.getVisibility() == View.VISIBLE)
+                            messageViewHolder.message_time.setVisibility(View.GONE);
+                        else
+                            messageViewHolder.message_time.setVisibility(View.VISIBLE);
+
+                    });
+
+            } catch (NullPointerException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            @Override
+            public void onChildChanged(@NonNull ChangeEventType type, @NonNull DataSnapshot
+                    snapshot, int newIndex, int oldIndex) {
+                super.onChildChanged(type, snapshot, newIndex, oldIndex);
+
+                if (newIndex > oldIndex) {
+
+                    userChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if (dataSnapshot.exists()) {
+                                currentChatRef.child("unSeen").setValue(0);
+                                currentChatRef.child("seen").setValue(true);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+
+                    messageRecyclerView.smoothScrollToPosition(newIndex);
+
+                    notifyDataSetChanged();
+                }
+            }
+        };
+
+        messageRecyclerView.setAdapter(messageAdapter);
 
                 messageAdapter.startListening();
+
 
     }
 

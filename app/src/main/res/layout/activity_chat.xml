@@ -318,7 +318,8 @@
             android:layout_margin="4dp"
             android:src="@drawable/ic_send_black_24dp"
             android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"/>
+            android:layout_centerVertical="true"
+            android:visibility="gone"/>
 
     </RelativeLayout>
 
