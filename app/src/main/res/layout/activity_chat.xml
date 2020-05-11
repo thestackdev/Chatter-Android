@@ -50,6 +50,7 @@
                 android:paddingEnd="6dp"/>
 
             <TextView
+                android:text="Fetching..."
                 android:id="@+id/lastSeen"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

@@ -19,7 +19,6 @@ import com.firebase.chatter.activities.MessageActivity;
 import com.firebase.chatter.models.Chat;
 import com.firebase.chatter.models.Messages;
 import com.firebase.chatter.models.Users;
-import com.firebase.chatter.service.ChatsService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -57,19 +56,14 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
     public void onMessageReceived(@NonNull final RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
-      /*  if (remoteMessage.getData().size() > 0) {
+        if (remoteMessage.getData().size() > 0) {
 
-            final String fromID = remoteMessage.getData().get("fromID");
+            notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            assert notificationManager != null;
+            notificationManager.cancelAll();
+
             final String pushID = remoteMessage.getData().get("pushID");
-            final String toID = remoteMessage.getData().get("toID");
-            final String message = remoteMessage.getData().get("message");
             String times = remoteMessage.getData().get("times");
-
-            assert times != null;
-            assert toID != null;
-            assert fromID != null;
-            assert pushID != null;
-
 
             rootData = FirebaseDatabase.getInstance().getReference();
 
@@ -78,6 +72,8 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             chatData = rootData.child("Chat").child(uID);
 
             messageData = rootData.child("messages");
+
+            usersData = rootData.child("Users");
 
             chatData.addListenerForSingleValueEvent(new ValueEventListener() {
 
@@ -133,17 +129,14 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
 
             }
         });
-
-
     }
 
     private void notifyUserWithNotification(String myName, String from, String image, String thumbnail, String message) {
-        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             setupChannels();
         }
-        int notificationId = new Random().nextInt(60000);
+        int notificationID = new Random().nextInt(6000);
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getApplicationContext(), "Chatter")
@@ -166,7 +159,7 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
         notificationBuilder.setContentIntent(contentIntent);
 
         assert notificationManager != null;
-        notificationManager.notify(notificationId, notificationBuilder.build());
+        notificationManager.notify(notificationID, notificationBuilder.build());
 
     }
 
@@ -186,7 +179,6 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             notificationManager.createNotificationChannel(adminChannel);
 
         }
-    } */
     }
 }
 

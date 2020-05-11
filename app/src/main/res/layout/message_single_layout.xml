@@ -71,7 +71,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="4dp"
-            android:text="HEY HEy HEy HEY"
             android:gravity="start"
             android:textColor="@color/white"
             style="@android:style/TextAppearance.Medium" />
@@ -91,15 +90,13 @@
                 android:layout_height="wrap_content"
                 style="@android:style/TextAppearance.Small"
                 android:textColor="@color/white"
-                android:text="00:00"
                 android:layout_marginEnd="2dp"/>
 
             <ImageView
                 android:id="@+id/stamp"
                 android:layout_width="18dp"
                 android:layout_height="18dp"
-                android:gravity="center"
-                android:layout_gravity="end"
+                android:layout_gravity="end|bottom"
                 android:layout_marginEnd="2dp"
                 android:layout_marginStart="10dp"
                 android:scaleType="centerInside"

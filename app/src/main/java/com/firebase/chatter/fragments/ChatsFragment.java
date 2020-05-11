@@ -30,7 +30,6 @@ import com.firebase.chatter.models.Chat;
 import com.firebase.chatter.models.Messages;
 import com.firebase.chatter.models.SelectedItemsModel;
 import com.firebase.chatter.models.Users;
-import com.firebase.chatter.service.ChatsService;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
@@ -57,7 +56,6 @@ public class ChatsFragment extends Fragment  {
     private DatabaseReference messageData;
     private DatabaseReference chatRef;
     private DatabaseReference userChatRef;
-    private DatabaseReference rootData;
 
     private String current_Uid;
 
@@ -73,7 +71,7 @@ public class ChatsFragment extends Fragment  {
 
         initUI(view);
 
-        rootData = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference rootData = FirebaseDatabase.getInstance().getReference();
         current_Uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
 
         messageData = rootData.child("messages");
@@ -449,13 +447,11 @@ public class ChatsFragment extends Fragment  {
 
     @Override
     public void onPause() {
-     //   Objects.requireNonNull(getActivity()).startService(new Intent(getActivity(), ChatsService.class));
         super.onPause();
     }
 
     @Override
     public void onResume() {
-     //   Objects.requireNonNull(getActivity()).stopService(new Intent(getActivity(), ChatsService.class));
         super.onResume();
     }
 }

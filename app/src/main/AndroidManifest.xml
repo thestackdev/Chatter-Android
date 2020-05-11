@@ -17,17 +17,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <service
-            android:name=".service.ChatsService"
-            android:enabled="true"
-            android:exported="true"/>
-
-        <receiver android:name=".service.Restarter">
-            <intent-filter>
-                <action android:name="RestartService" />
-            </intent-filter>
-        </receiver>
-
         <activity android:name=".ForwardActivity" />
         <activity android:name=".DetailsActivity" />
         <activity android:name=".activities.FullScreenImageView" />

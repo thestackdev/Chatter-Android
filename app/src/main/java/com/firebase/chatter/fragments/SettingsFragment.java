@@ -1,7 +1,6 @@
 package com.firebase.chatter.fragments;
 
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -26,6 +25,7 @@ import com.firebase.chatter.R;
 import com.firebase.chatter.activities.FullScreenImageView;
 import com.firebase.chatter.activities.LoginActivity;
 import com.firebase.chatter.helper.AppAccents;
+import com.firebase.chatter.models.Users;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -39,7 +39,6 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.skydoves.colorpickerview.ColorEnvelope;
 import com.skydoves.colorpickerview.ColorPickerDialog;
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener;
 import com.squareup.picasso.Callback;
@@ -65,12 +64,10 @@ public class SettingsFragment extends Fragment {
     private ImageView change_name, change_status, change_email, change_password;
     private DatabaseReference userData;
     private Uri imageUri;
-    private String image;
     private ImageView changeImage;
-    private static final int GALLERY_PICK = 1;
     private ProgressDialog progressDialog;
     private StorageReference mStorageRef;
-    private Task mUploadTask;
+    private Task<UploadTask.TaskSnapshot> mUploadTask;
     private String thumbUrl, imageUrl;
     private String current_uid;
     private View view;
@@ -91,61 +88,61 @@ public class SettingsFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_settings,container,false);
         setUpUiViews();
 
-        edit_info.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        edit_info.setOnClickListener(v -> {
 
-                change_name.setVisibility(View.VISIBLE);
-                change_status.setVisibility(View.VISIBLE);
-                change_email.setVisibility(View.VISIBLE);
-                change_password.setVisibility(View.VISIBLE);
-                edit_info.setVisibility(View.GONE);
-                done_editing.setVisibility(View.VISIBLE);
+            change_name.setVisibility(View.VISIBLE);
+            change_status.setVisibility(View.VISIBLE);
+            change_email.setVisibility(View.VISIBLE);
+            change_password.setVisibility(View.VISIBLE);
+            edit_info.setVisibility(View.GONE);
+            done_editing.setVisibility(View.VISIBLE);
 
-                change_name.animate().translationY(0);
-                change_status.animate().translationY(0);
-                change_email.animate().translationY(0);
-                change_password.animate().translationY(0);
-                edit_info.animate().translationY(0);
-                done_editing.animate().translationY(0);
+            change_name.animate().translationY(0);
+            change_status.animate().translationY(0);
+            change_email.animate().translationY(0);
+            change_password.animate().translationY(0);
+            edit_info.animate().translationY(0);
+            done_editing.animate().translationY(0);
 
-                done_editing.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
+            done_editing.setOnClickListener(v1 -> {
 
-                        change_name.setVisibility(View.GONE);
-                        change_status.setVisibility(View.GONE);
-                        change_email.setVisibility(View.GONE);
-                        change_password.setVisibility(View.GONE);
-                        done_editing.setVisibility(View.GONE);
-                        edit_info.setVisibility(View.VISIBLE);
+                change_name.setVisibility(View.GONE);
+                change_status.setVisibility(View.GONE);
+                change_email.setVisibility(View.GONE);
+                change_password.setVisibility(View.GONE);
+                done_editing.setVisibility(View.GONE);
+                edit_info.setVisibility(View.VISIBLE);
 
-                        change_name.animate().translationY(1);
-                        change_status.animate().translationY(1);
-                        change_email.animate().translationY(1);
-                        change_password.animate().translationY(1);
-                        edit_info.animate().translationY(1);
-                        done_editing.animate().translationY(1);
+                change_name.animate().translationY(1);
+                change_status.animate().translationY(1);
+                change_email.animate().translationY(1);
+                change_password.animate().translationY(1);
+                edit_info.animate().translationY(1);
+                done_editing.animate().translationY(1);
 
-                    }
-                });
+            });
 
-            }
         });
 
         userData.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                String name = Objects.requireNonNull(dataSnapshot.child("name").getValue()).toString();
-                String status = Objects.requireNonNull(dataSnapshot.child("status").getValue()).toString();
-                image = Objects.requireNonNull(dataSnapshot.child("image").getValue()).toString();
-                final String thumbnail = Objects.requireNonNull(dataSnapshot.child("thumbnail").getValue()).toString();
+                Users users = dataSnapshot.getValue(Users.class);
 
-                user_name.setText(name);
-                user_status.setText(status);
+                user_name.setText(users.getName());
+                user_status.setText(users.getStatus());
 
-                if (!thumbnail.equals("default")) {
-                    Picasso.get().load(thumbnail).networkPolicy(NetworkPolicy.OFFLINE)
+                user_image.setOnClickListener(v -> {
+                    if(!users.getThumbnail().equals("default")) {
+                        imageUri = Uri.parse(users.getImage());
+                        Intent intent = new Intent(getContext() , FullScreenImageView.class);
+                        intent.setData(imageUri);
+                        startActivity(intent);
+                    }
+                });
+
+                if (!users.getThumbnail().equals("default")) {
+                    Picasso.get().load(users.getThumbnail()).networkPolicy(NetworkPolicy.OFFLINE)
                             .placeholder(R.drawable.avatar).into(user_image, new Callback() {
                         @Override
                         public void onSuccess() {
@@ -153,7 +150,7 @@ public class SettingsFragment extends Fragment {
 
                         @Override
                         public void onError(Exception e) {
-                            Picasso.get().load(thumbnail).placeholder(R.drawable.avatar).into(user_image);
+                            Picasso.get().load(users.getThumbnail()).placeholder(R.drawable.avatar).into(user_image);
 
                         }
                     });
@@ -166,54 +163,31 @@ public class SettingsFragment extends Fragment {
             }
         });
 
-        user_image.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                imageUri = Uri.parse(image);
-                Intent intent = new Intent(getContext() , FullScreenImageView.class);
-                intent.setData(imageUri);
-                startActivity(intent);
-            }
+        change_name.setOnClickListener(v -> {
+            UserNameDialog usernameDialog = new UserNameDialog();
+            assert getFragmentManager() != null;
+            usernameDialog.show(getFragmentManager(),"Change Name");
         });
 
-        change_name.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                UserNameDialog usernameDialog = new UserNameDialog();
-                assert getFragmentManager() != null;
-                usernameDialog.show(getFragmentManager(),"Change Name");
-            }
+        change_status.setOnClickListener(v -> {
+            Change_Status change_status = new Change_Status();
+            assert getFragmentManager() != null;
+            change_status.show(getFragmentManager(),"Change Status");
         });
 
-        change_status.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Change_Status change_status = new Change_Status();
-                assert getFragmentManager() != null;
-                change_status.show(getFragmentManager(),"Change Status");
-            }
+        change_email.setOnClickListener(v -> {
+            Change_email change_email = new Change_email();
+            assert getFragmentManager() != null;
+            change_email.show(getFragmentManager(), "Change Email ID");
         });
 
-        change_email.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Change_email change_email = new Change_email();
-                assert getFragmentManager() != null;
-                change_email.show(getFragmentManager(), "Change Email ID");
-            }
-        });
-
-        change_password.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Change_Password change_password = new Change_Password();
-                assert getFragmentManager() != null;
-                change_password.show(getFragmentManager(),"Change Password");
-            }
+        change_password.setOnClickListener(v -> {
+            Change_Password change_password = new Change_Password();
+            assert getFragmentManager() != null;
+            change_password.show(getFragmentManager(),"Change Password");
         });
 
         logout.setOnClickListener(v -> {
-
 
             AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getContext()));
             builder.setTitle("Logout").setCancelable(false).setMessage("Are You Sure");
@@ -225,57 +199,28 @@ public class SettingsFragment extends Fragment {
                     String userID = firebaseUser.getUid();
                     DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
                             .child("Users").child(userID).child("online");
-                    databaseReference.setValue(ServerValue.TIMESTAMP).addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-
-                        }
-                    });
+                    databaseReference.setValue(ServerValue.TIMESTAMP);
                 }
 
-                try {
                     FirebaseAuth.getInstance().signOut();
                     Intent intent = new Intent(getContext(), LoginActivity.class);
-
                     startActivity(intent);
 
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
             });
-            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            });
+            builder.setNegativeButton("No", (dialog, which) -> dialog.dismiss());
             builder.create().show();
         });
 
 
-        changeImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                callGalleryIntent();
-            }
-        });
+        changeImage.setOnClickListener(v -> callGalleryIntent());
 
-        accent_picker.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        accent_picker.setOnClickListener(v -> selectAccent());
 
-                selectAccent();
-            }
-        });
-
-        layout_check_update.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent updateIntent = new Intent(getActivity(), UpdateActivity.class);
-                updateIntent.putExtra("username","krishna0928");
-                updateIntent.putExtra("repoName","Chatter");
-                startActivity(updateIntent);
-            }
+        layout_check_update.setOnClickListener(v -> {
+            Intent updateIntent = new Intent(getActivity(), UpdateActivity.class);
+            updateIntent.putExtra("username","krishna0928");
+            updateIntent.putExtra("repoName","Chatter");
+            startActivity(updateIntent);
         });
 
         return view;
@@ -301,42 +246,21 @@ public class SettingsFragment extends Fragment {
         text_color_box.setBackground(setTextColorDlg());
         title_text_color_box.setBackground(setTitleTextColorDlg());
 
-        app_accent_layout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                accentDialog(0, app_accent_color_box);
-            }
+        app_accent_layout.setOnClickListener(v -> accentDialog(0, app_accent_color_box));
+
+        text_color_layout.setOnClickListener(v -> accentDialog(1, text_color_box));
+
+        title_text_color_layout.setOnClickListener(v -> accentDialog(2, title_text_color_box));
+
+        builder.setPositiveButton("Ok", (dialog, which) -> {
+            dialog.dismiss();
+            getActivity().recreate();
         });
 
-        text_color_layout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                accentDialog(1, text_color_box);
-            }
-        });
-
-        title_text_color_layout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                accentDialog(2, title_text_color_box);
-            }
-        });
-
-        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-                getActivity().recreate();
-            }
-        });
-
-        builder.setNeutralButton("Default", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                appAccents.setDefault();
-                dialog.dismiss();
-                getActivity().recreate();
-            }
+        builder.setNeutralButton("Default", (dialog, which) -> {
+            appAccents.setDefault();
+            dialog.dismiss();
+            getActivity().recreate();
         });
 
         builder.show();
@@ -370,32 +294,24 @@ public class SettingsFragment extends Fragment {
                 .setTitle(getString(R.string.select_accent_color))
                 .setPreferenceName("MyColorPickerDialog")
                 .setPositiveButton(getString(R.string.confirm),
-                        new ColorEnvelopeListener() {
-                            @Override
-                            public void onColorSelected(ColorEnvelope envelope, boolean fromUser) {
+                        (ColorEnvelopeListener) (envelope, fromUser) -> {
 
-                                if (type==0){
-                                    appAccents.setAccentColor("#"+envelope.getHexCode());
-                                    color_box.setBackground(setAccentColorDlg());
-                                }
-                                else if (type==1){
-                                    appAccents.setTextColor("#"+envelope.getHexCode());
-                                    color_box.setBackground(setTextColorDlg());
-                                }
-                                else{
-                                    appAccents.setTitleTextColor("#"+envelope.getHexCode());
-                                    color_box.setBackground(setTitleTextColorDlg());
-                                }
-
+                            if (type==0){
+                                appAccents.setAccentColor("#"+envelope.getHexCode());
+                                color_box.setBackground(setAccentColorDlg());
                             }
+                            else if (type==1){
+                                appAccents.setTextColor("#"+envelope.getHexCode());
+                                color_box.setBackground(setTextColorDlg());
+                            }
+                            else{
+                                appAccents.setTitleTextColor("#"+envelope.getHexCode());
+                                color_box.setBackground(setTitleTextColorDlg());
+                            }
+
                         })
                 .setNegativeButton(getString(R.string.cancel),
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                dialogInterface.dismiss();
-                            }
-                        })
+                        (dialogInterface, i) -> dialogInterface.dismiss())
                 .attachAlphaSlideBar(true)
                 .attachBrightnessSlideBar(true)
                 .show();
@@ -443,47 +359,33 @@ public class SettingsFragment extends Fragment {
                 final StorageReference thumb_Ref = mStorageRef.child("thumbnails").child(current_uid + ".jpg");
 
                 mUploadTask = storageReference.putFile(resultUri)
-                        .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                            @Override
-                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                if (Objects.requireNonNull(taskSnapshot.getMetadata()).getReference() != null) {
-                                    storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                                        @Override
-                                        public void onSuccess(Uri uri) {
-                                            imageUrl = uri.toString();
-                                        }
-                                    });
+                        .addOnSuccessListener(taskSnapshot -> {
+                            if (Objects.requireNonNull(taskSnapshot.getMetadata()).getReference() != null) {
+                                storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                    @Override
+                                    public void onSuccess(Uri uri) {
+                                        imageUrl = uri.toString();
+                                    }
+                                });
 
-                                    mUploadTask = thumb_Ref.putBytes(thumb_byte).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                                        @Override
-                                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                            if (Objects.requireNonNull(taskSnapshot.getMetadata()).getReference() != null) {
-                                                thumb_Ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                                                    @Override
-                                                    public void onSuccess(Uri uri) {
-                                                        thumbUrl = uri.toString();
+                                mUploadTask = thumb_Ref.putBytes(thumb_byte).addOnSuccessListener(taskSnapshot1 -> {
+                                    if (Objects.requireNonNull(taskSnapshot1.getMetadata()).getReference() != null) {
+                                        thumb_Ref.getDownloadUrl().addOnSuccessListener(uri -> {
+                                            thumbUrl = uri.toString();
 
-                                                        Map imageMap = new HashMap<>();
-                                                        imageMap.put("image" , imageUrl);
-                                                        imageMap.put("thumbnail" , thumbUrl);
+                                            Map imageMap = new HashMap<>();
+                                            imageMap.put("image" , imageUrl);
+                                            imageMap.put("thumbnail" , thumbUrl);
 
-                                                        userData.updateChildren(imageMap).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                            @Override
-                                                            public void onSuccess(Void aVoid) {
-                                                                progressDialog.dismiss();
-                                                            }
-                                                        });
-                                                    }
-                                                });
+                                            userData.updateChildren(imageMap).addOnSuccessListener((OnSuccessListener<Void>) aVoid -> progressDialog.dismiss());
+                                        });
 
 
-                                            }
-                                        }
-                                    });
+                                    }
+                                });
 
-                                } else {
-                                    progressDialog.dismiss();
-                                }
+                            } else {
+                                progressDialog.dismiss();
                             }
                         });
             }
