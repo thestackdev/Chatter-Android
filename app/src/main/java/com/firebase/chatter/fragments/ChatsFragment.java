@@ -1,11 +1,13 @@
 package com.firebase.chatter.fragments;
 
 import android.app.AlertDialog;
+import android.app.Service;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -47,7 +50,7 @@ import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class ChatsFragment extends Fragment {
+public class ChatsFragment extends Fragment  {
 
     private RecyclerView recyclerView;
     private DatabaseReference usersData;
@@ -186,8 +189,6 @@ public class ChatsFragment extends Fragment {
 
                         });
 
-
-
                         chatsViewHolder.itemView.setOnClickListener(v -> {
 
                             if (selectedItems.size()>0){
@@ -307,7 +308,7 @@ public class ChatsFragment extends Fragment {
                                                 }
                                             });
 
-                                  //  notifyDataSetChanged();
+                                    getRef(selectedItems.get(keys).getPosition()).removeValue();
 
                                     deSelectMsg(Objects.requireNonNull(selectedItems.get(keys)));
 
@@ -442,14 +443,19 @@ public class ChatsFragment extends Fragment {
 
             selectedItems.clear();
             chat_bar_layout.setVisibility(View.GONE);
-
         }
 
     }
 
     @Override
     public void onPause() {
-        getActivity().startService(new Intent(getActivity(), ChatsService.class));
+     //   Objects.requireNonNull(getActivity()).startService(new Intent(getActivity(), ChatsService.class));
         super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+     //   Objects.requireNonNull(getActivity()).stopService(new Intent(getActivity(), ChatsService.class));
+        super.onResume();
     }
 }

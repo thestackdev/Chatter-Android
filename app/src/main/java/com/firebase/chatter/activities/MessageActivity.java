@@ -517,210 +517,212 @@ public class MessageActivity extends AppCompatActivity implements RecyclerItemTo
 
                         try {
 
-                            if(messages.getDelete() != null && messages.getDelete().equals(currentUid)) {
-                                messageViewHolder.itemView.setVisibility(View.GONE);
-                                messageViewHolder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0 , 0));
-                            }
-
                             final String times = messages.getTimes();
-                            String[] split = times.split("," , 3);
+                            String[] split = times.split(",", 3);
 
                             split[2] = dateFormat.format(new Date());
 
+                            if(messages.getDelete().equals(currentUid)) {
+                                messageViewHolder.itemView.setVisibility(View.GONE);
+                                messageViewHolder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0 , 0));
 
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
-                            messageViewHolder.replied_message_tv.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
-                        }
+                            } else {
 
-                        messageViewHolder.message_time.setVisibility(View.GONE);
+                                if (messages.getFrom().equals(currentUid)) {
 
-                        msg_selected_reply.setOnClickListener(v -> replyMessage(position));
-
-                        msg_selected_fav.setOnClickListener(v -> {
-                            //TODO
-                        });
-
-                        msg_selected_delete.setOnClickListener(v -> {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
-                            builder.setTitle("Are You Sure ?").setCancelable(false);
-
-                            builder.setPositiveButton("Delete For EveryOne", (dialog, which) -> {
-                                for(int items : selectedItems.keySet()) {
-
-                                    getRef(items).removeValue().addOnSuccessListener(aVoid -> { });
-                                    messageData.child(getRef(items).getKey()).removeValue();
-                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
-
-                                }
-                                message_selected_bar.setVisibility(View.INVISIBLE);
-                                message_bar.setVisibility(View.VISIBLE);
-                                selectedItems.clear();
-                            });
-
-                            builder.setNegativeButton("Delete For Me" , ((dialog, which) -> {
-                                for(int items : selectedItems.keySet()) {
-
-                                    getRef(items).child("delete").setValue(currentUid).addOnSuccessListener(aVoid -> {});
-
-                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
-
-                                }
-
-                                message_selected_bar.setVisibility(View.INVISIBLE);
-                                message_bar.setVisibility(View.VISIBLE);
-                                selectedItems.clear();
-                            }));
-
-                            builder.setNeutralButton("Cancel" , ((dialog, which) -> {
-                                dialog.dismiss();
-                            }));
-
-                            builder.create().show();
-                        });
-
-                        msg_selected_forward.setOnClickListener(v -> {
-                            //TODO
-                        });
-
-                        msg_selected_copy.setOnClickListener(v -> {
-
-                                for (int key : selectedItems.keySet()){
-
-                                    if (copiedMessages.equals("")) {
-                                        copiedMessages = String.format("%s",selectedItems.get(key).getMessage());
-                                    }
-                                    else {
-                                        copiedMessages = String.format("%s\n%s",copiedMessages,selectedItems.get(key).getMessage());
+                                    if (messages.getState() == 0 && isNetworkAvailable(getApplicationContext())) {
+                                        messageData.child(Objects.requireNonNull(getRef(position).getKey()))
+                                                .child("state").setValue(1).addOnSuccessListener(aVoid -> {});
                                     }
 
-                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(key)).getView());
-                                }
+                                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
+                                    params.gravity = Gravity.END;
+                                    messageViewHolder.layout_bg.setLayoutParams(params);
 
-                                message_selected_bar.setVisibility(View.INVISIBLE);
-                                message_bar.setVisibility(View.VISIBLE);
-                                selectedItems.clear();
+                                    messageViewHolder.message_time.setGravity(Gravity.END);
 
+                                    if (!appAccents.getAccentColor().equals("#9ab7d3")) {
+                                        Drawable bg_right = DrawableCompat.wrap(Objects.requireNonNull(getDrawable(R.drawable.background_right)));
+                                        DrawableCompat.setTint(bg_right, Color.parseColor(appAccents.getAccentColor()));
+                                        messageViewHolder.layout_bg.setBackground(bg_right);
+                                    }
 
-                            copySelectedMessagesToClipBoard(copiedMessages);
+                                    messageViewHolder.layout_bg.setBackground(
+                                            ContextCompat.getDrawable(getApplicationContext(), R.drawable.background_right));
 
-                        });
+                                    messageViewHolder.stamp.setVisibility(View.VISIBLE);
 
-                        if (Objects.requireNonNull(messages.getReply_message()).equals("null")){
-
-                            messageViewHolder.replied_message_layout.setVisibility(View.GONE);
-                            messageViewHolder.replied_username_tv.setVisibility(View.GONE);
-                            messageViewHolder.replied_message_tv.setVisibility(View.GONE);
-
-                        }else {
-
-                            messageViewHolder.replied_username_tv.setText(messages.getReply_username());
-                            messageViewHolder.replied_message_tv.setText(messages.getReply_message());
-
-                            messageViewHolder.replied_message_layout.setVisibility(View.VISIBLE);
-                            messageViewHolder.replied_username_tv.setVisibility(View.VISIBLE);
-                            messageViewHolder.replied_message_tv.setVisibility(View.VISIBLE);
-
-                        }
-
-                        messageViewHolder.message.setText(messages.getMessage());
-                        messageViewHolder.message_time.setVisibility(View.VISIBLE);
-                        messageViewHolder.message_time.setText(split[0]);
-
-                            int maxw = messageViewHolder.message.getMaxWidth();
-
-                            Paint textPaint = messageViewHolder.message.getPaint();
-                            float width = textPaint.measureText(messages.getMessage());
-
-                            if (!messages.getReply_message().equals("null")){
-                                messageViewHolder.layout_bg.setOrientation(LinearLayout.VERTICAL);
-                            }else {
-                                if (width >= maxw){
-                                    messageViewHolder.layout_bg.setOrientation(LinearLayout.VERTICAL);
-                                }else {
-                                    messageViewHolder.layout_bg.setOrientation(LinearLayout.HORIZONTAL);
-                                }
-                            }
-
-                        if (messages.getFrom().equals(currentUid)) {
-                            if(messages.getState() == 0 && isNetworkAvailable(getApplicationContext())) {
-                                messageData.child(Objects.requireNonNull(getRef(position).getKey()))
-                                        .child("state").setValue(1).addOnSuccessListener(aVoid -> {
-                                });
-                            }
-
-                            LinearLayout.LayoutParams params = new
-                                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
-                                    LinearLayout.LayoutParams.MATCH_PARENT);
-                            params.gravity = Gravity.END;
-                            messageViewHolder.layout_bg.setLayoutParams(params);
-
-                            messageViewHolder.message_time.setGravity(Gravity.END);
-
-                            if (!appAccents.getAccentColor().equals("#9ab7d3")){
-                                Drawable bg_right = DrawableCompat.wrap(Objects.requireNonNull(getDrawable(R.drawable.background_right)));
-                                DrawableCompat.setTint(bg_right,Color.parseColor(appAccents.getAccentColor()));
-                                messageViewHolder.layout_bg.setBackground(bg_right);
-                            }
-
-                            messageViewHolder.layout_bg.setBackground(
-                                    ContextCompat.getDrawable(getApplicationContext(),R.drawable.background_right));
-
-                            messageViewHolder.stamp.setVisibility(View.VISIBLE);
-
-                                switch (messages.getState()) {
-                                    case 3:
-                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
-                                        break;
-                                    case 2:
-                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
-                                        break;
-                                    case 1:
-                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
-                                        break;
-                                    default:
-                                        messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_message_pending);
-                                        break;
-                                }
+                                    switch (messages.getState()) {
+                                        case 3:
+                                            messageViewHolder.stamp.setBackgroundResource(R.drawable.greentick);
+                                            break;
+                                        case 2:
+                                            messageViewHolder.stamp.setBackgroundResource(R.drawable.delivered_stamp);
+                                            break;
+                                        case 1:
+                                            messageViewHolder.stamp.setBackgroundResource(R.drawable.blacktick);
+                                            break;
+                                        default:
+                                            messageViewHolder.stamp.setBackgroundResource(R.drawable.ic_message_pending);
+                                            break;
+                                    }
 
 
-                        } else if (messages.getFrom().equals(chatUserId)) {
+                                } else if (messages.getFrom().equals(chatUserId)) {
 
-                            if(messages.getState() == 2) {
+                                    if (messages.getState() == 2) {
 
-                                userChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                        if(dataSnapshot.exists()) {
+                                        userChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                if (dataSnapshot.exists()) {
 
-                                            messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
-                                                    .setValue(split[0] +","+ split[1] +","+split[2]);
+                                                    messageData.child(Objects.requireNonNull(getRef(position).getKey())).child("times")
+                                                            .setValue(split[0] + "," + split[1] + "," + split[2]);
 
-                                            messageData.child(Objects.requireNonNull(getRef(position)
-                                                    .getKey())).child("state").setValue("3");
+                                                    getRef(position).child("state").setValue(3);
+
+                                                }
+                                            }
+
+                                            @Override
+                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                            }
+                                        });
+
+
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                            messageViewHolder.message.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
+                                            messageViewHolder.replied_message_tv.setMaxWidth(Math.toIntExact(Math.round(getMessageMaxWidth())));
+                                        }
+
+                                        messageViewHolder.message_time.setVisibility(View.GONE);
+
+                                        msg_selected_reply.setOnClickListener(v -> replyMessage(position));
+
+                                        msg_selected_fav.setOnClickListener(v -> {
+                                            //TODO
+                                        });
+
+                                        msg_selected_delete.setOnClickListener(v -> {
+                                            AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
+                                            builder.setTitle("Are You Sure ?").setCancelable(false);
+
+                                            builder.setPositiveButton("Delete For EveryOne", (dialog, which) -> {
+                                                for (int items : selectedItems.keySet()) {
+
+                                                    getRef(items).removeValue().addOnSuccessListener(aVoid -> {
+                                                    });
+                                                    messageData.child(getRef(items).getKey()).removeValue();
+                                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+
+                                                }
+                                                message_selected_bar.setVisibility(View.INVISIBLE);
+                                                message_bar.setVisibility(View.VISIBLE);
+                                                selectedItems.clear();
+                                            });
+
+                                            builder.setNegativeButton("Delete For Me", ((dialog, which) -> {
+                                                for (int items : selectedItems.keySet()) {
+
+                                                    getRef(items).child("delete").setValue(currentUid).addOnSuccessListener(aVoid -> {
+                                                    });
+
+                                                    notifyItemRemoved(selectedItems.get(items).getPosition());
+                                                    notifyDataSetChanged();
+
+                                                    deSelectMsg(Objects.requireNonNull(selectedItems.get(items)).getView());
+
+                                                }
+
+                                                message_selected_bar.setVisibility(View.INVISIBLE);
+                                                message_bar.setVisibility(View.VISIBLE);
+                                                selectedItems.clear();
+                                            }));
+
+                                            builder.setNeutralButton("Cancel", ((dialog, which) -> {
+                                                dialog.dismiss();
+                                            }));
+
+                                            builder.create().show();
+                                        });
+
+                                        msg_selected_forward.setOnClickListener(v -> {
+                                            //TODO
+                                        });
+
+                                        msg_selected_copy.setOnClickListener(v -> {
+
+                                            for (int key : selectedItems.keySet()) {
+
+                                                if (copiedMessages.equals("")) {
+                                                    copiedMessages = String.format("%s", selectedItems.get(key).getMessage());
+                                                } else {
+                                                    copiedMessages = String.format("%s\n%s", copiedMessages, selectedItems.get(key).getMessage());
+                                                }
+
+                                                deSelectMsg(Objects.requireNonNull(selectedItems.get(key)).getView());
+                                            }
+
+                                            message_selected_bar.setVisibility(View.INVISIBLE);
+                                            message_bar.setVisibility(View.VISIBLE);
+                                            selectedItems.clear();
+
+
+                                            copySelectedMessagesToClipBoard(copiedMessages);
+
+                                        });
+
+                                        if (Objects.requireNonNull(messages.getReply_message()).equals("null")) {
+
+                                            messageViewHolder.replied_message_layout.setVisibility(View.GONE);
+                                            messageViewHolder.replied_username_tv.setVisibility(View.GONE);
+                                            messageViewHolder.replied_message_tv.setVisibility(View.GONE);
+
+                                        } else {
+
+                                            messageViewHolder.replied_username_tv.setText(messages.getReply_username());
+                                            messageViewHolder.replied_message_tv.setText(messages.getReply_message());
+
+                                            messageViewHolder.replied_message_layout.setVisibility(View.VISIBLE);
+                                            messageViewHolder.replied_username_tv.setVisibility(View.VISIBLE);
+                                            messageViewHolder.replied_message_tv.setVisibility(View.VISIBLE);
+
+                                        }
+
+                                        messageViewHolder.message.setText(messages.getMessage());
+                                        messageViewHolder.message_time.setVisibility(View.VISIBLE);
+                                        messageViewHolder.message_time.setText(split[0]);
+
+                                        int maxw = messageViewHolder.message.getMaxWidth();
+
+                                        Paint textPaint = messageViewHolder.message.getPaint();
+                                        float width = textPaint.measureText(messages.getMessage());
+
+                                        if (!messages.getReply_message().equals("null")) {
+                                            messageViewHolder.layout_bg.setOrientation(LinearLayout.VERTICAL);
+                                        } else {
+                                            if (width >= maxw) {
+                                                messageViewHolder.layout_bg.setOrientation(LinearLayout.VERTICAL);
+                                            } else {
+                                                messageViewHolder.layout_bg.setOrientation(LinearLayout.HORIZONTAL);
+                                            }
+
+                                            messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
+                                            messageViewHolder.stamp.setVisibility(View.GONE);
+
+                                            LinearLayout.LayoutParams params = new
+                                                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                                                    LinearLayout.LayoutParams.MATCH_PARENT);
+                                            params.gravity = Gravity.START;
+                                            messageViewHolder.layout_bg.setLayoutParams(params);
+                                            messageViewHolder.message_time.setGravity(Gravity.START);
 
                                         }
                                     }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                    }
-                                });
-
+                                }
                             }
-
-                            messageViewHolder.layout_bg.setBackgroundResource(R.drawable.background_left);
-                            messageViewHolder.stamp.setVisibility(View.GONE);
-
-                            LinearLayout.LayoutParams params = new
-                                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
-                                    LinearLayout.LayoutParams.MATCH_PARENT);
-                            params.gravity = Gravity.START;
-                            messageViewHolder.layout_bg.setLayoutParams(params);
-                            messageViewHolder.message_time.setGravity(Gravity.START);
-
-                        }
 
                         } catch (NullPointerException e) {
                             finish();
